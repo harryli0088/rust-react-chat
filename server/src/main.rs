@@ -39,12 +39,12 @@ use http::header::{
 };
 
 type Sender = UnboundedSender<Message>;
-struct TestStruct {
+struct PeerStruct {
     protocol: HeaderValue,
     sender: Sender,
 }
 
-type PeerMap = Arc<Mutex<HashMap<SocketAddr, TestStruct>>>;
+type PeerMap = Arc<Mutex<HashMap<SocketAddr, PeerStruct>>>;
 
 use serde::{Deserialize, Serialize};
 
@@ -65,9 +65,9 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         }
 
         //access the protocol in the request, then set it in the response
-        protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned();
-        let owned_protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned();
-        response.headers_mut().insert(SEC_WEBSOCKET_PROTOCOL, owned_protocol);
+        protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned(); //save the protocol to use outside the closure
+        let response_protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned();
+        response.headers_mut().insert(SEC_WEBSOCKET_PROTOCOL, response_protocol);
         Ok(response)
     };
 
@@ -76,13 +76,13 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         raw_stream,
         copy_headers_callback,
     )
-        .await
-        .expect("Error during the websocket handshake occurred");
+    .await
+    .expect("Error during the websocket handshake occurred");
     println!("WebSocket connection established: {}", client_addr);
 
     // Insert the write part of this peer to the peer map.
     let (sender, receiver) = unbounded();
-    peer_map.lock().unwrap().insert(client_addr, TestStruct {
+    peer_map.lock().unwrap().insert(client_addr, PeerStruct {
         protocol: protocol.to_owned(),
         sender: sender,
     });
@@ -90,6 +90,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     //set up the incoming and outgoing
     let (outgoing, incoming) = ws_stream.split();
 
+    //this function broadcasts messages to all other connected clients using the same protocol
     let broadcast_incoming = incoming.try_for_each(|msg| {
         println!("Received a message from {}: {}", client_addr, msg.to_text().unwrap());
         let peers = peer_map.lock().unwrap();
@@ -104,10 +105,9 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         );
         println!("New message {}", new_msg.to_text().unwrap());
 
-        // We want to broadcast the message to everyone except ourselves.
-        //filter returns addresses that aren't our current address
-        let broadcast_recipients =
-            peers.iter().filter(|(peer_addr, _)|
+        //filter addresses that aren't the message sender's address AND are using the same protocol
+        let broadcast_recipients = peers.iter().filter(
+            |(peer_addr, _)|
             peer_addr != &&client_addr
             && peers.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")==protocol.to_str().expect("expected a string")
         ).map(|(_, ws_sink)| ws_sink);
