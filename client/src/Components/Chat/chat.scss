@@ -1,0 +1,65 @@
+$margin: 20px;
+
+@mixin small-gray-text {
+  margin-bottom: 5px;
+  color: gray;
+  font-size: 12px;
+}
+
+.message-container {
+  .message {
+    display: flex;
+    flex-direction: row;
+    text-align: left;
+
+    .sender {
+      margin-top: $margin;
+      margin-left: $margin;
+      margin-right: $margin;
+      @include small-gray-text;
+    }
+
+    .content {
+      display: inline-block;
+      margin-left: $margin;
+      margin-right: $margin;
+      margin-bottom: 5px;
+      padding: 0.5em;
+      border-radius: 5px;
+      background-color: gray;
+      color: white;
+
+      pre {
+        font-style: inherit;
+        font-family: inherit;
+        margin: 0;
+      }
+    }
+
+    &.self {
+      flex-direction: row-reverse;
+      text-align: right;
+
+      .sender {
+      }
+
+      .content {
+        background-color: #17A589;
+      }
+    }
+
+    &.meta {
+      flex-direction: row;
+      justify-content: center;
+
+      .sender {
+        display: none;
+      }
+      .content {
+        @include small-gray-text;
+        background: none;
+        font-style: italic;
+      }
+    }
+  }
+}

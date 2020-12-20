@@ -1,20 +1,19 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import Chat, { ChatType } from "Components/Chat/Chat"
+import 'App.scss';
 
-type MessageType = {
-  message: string,
-  sender_addr: string,
-}
 
 interface State {
   input: string,
-  messages: MessageType[],
+  chats: ChatType[],
   newRoom: string,
   socketReadyState: number,
 }
 
 class App extends React.Component<{},State> {
+  lastDate: Date = new Date()
+  lastSenderAddr: string = ""
+  lastType: string = ""
   socket: WebSocket
 
   constructor(props:{}) {
@@ -22,7 +21,36 @@ class App extends React.Component<{},State> {
 
     this.state = {
       input: "",
-      messages: [],
+      chats: [
+        {
+          content: "testing testing 123",
+          date: new Date(),
+          senderAddr: "tessdadfadfadfasfsdsdasfafdfafdfasfadt",
+          showSenderAddr: true,
+          type: "user",
+        },
+        {
+          content: "testing testing 123",
+          date: new Date(),
+          senderAddr: "self",
+          showSenderAddr: true,
+          type: "user",
+        },
+        {
+          content: "testing testing 123",
+          date: new Date(),
+          senderAddr: "self",
+          showSenderAddr: false,
+          type: "user",
+        },
+        {
+          content: "testing testing 123",
+          date: new Date(),
+          senderAddr: "self",
+          showSenderAddr: false,
+          type: "user",
+        },
+      ],
       newRoom: "",
       socketReadyState: -1,
     }
@@ -39,6 +67,7 @@ class App extends React.Component<{},State> {
     const socket = new WebSocket("ws://localhost:8080", window.location.pathname.replace(/\//ig, "-"))
     socket.onopen = () => {
       console.log("OPEN RUNS")
+      this.addChat(`You have joined the chat room "${window.location.pathname}"`, "self", "meta")
       this.setState({socketReadyState: socket.readyState})
     }
 
@@ -46,12 +75,8 @@ class App extends React.Component<{},State> {
       console.log("MESSAGE", message)
 
       try {
-        const data = JSON.parse(message.data) as MessageType
-
-        this.setState({
-          messages: this.state.messages.concat(data),
-          socketReadyState: socket.readyState,
-        })
+        const parsed = JSON.parse(message.data)
+        this.addChatFromSocket(parsed.message, parsed.sender_addr, "user")
       }
       catch(err) {
         console.error(err)
@@ -67,6 +92,35 @@ class App extends React.Component<{},State> {
     return socket
   }
 
+  addChatFromSocket = (content: string, senderAddr:string, type: string) => {
+    this.addChat(content, senderAddr, type) //add the chat to state
+
+    this.setState({ //update the socket state
+      socketReadyState: this.socket.readyState,
+    })
+  }
+
+  addChat = (content: string, senderAddr:string, type: string) => {
+    const date = new Date()
+    const chat:ChatType = {
+      content,
+      date,
+      senderAddr,
+      showSenderAddr: this.lastSenderAddr !== senderAddr
+      || this.lastType !== type, //set whether we should show the sender addr
+      type,
+    }
+
+    //record last values
+    this.lastDate = date
+    this.lastSenderAddr = chat.senderAddr
+    this.lastType = chat.type
+
+    this.setState({ //add the chat to state
+      chats: this.state.chats.concat(chat),
+    })
+  }
+
   getConnectionStatus = () => {
     switch(this.state.socketReadyState) {
       case 0:
@@ -80,38 +134,47 @@ class App extends React.Component<{},State> {
     }
   }
 
-  onChatSubmit = (e:React.FormEvent<HTMLFormElement>) => {
+  onChatTypeSubmit = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    this.socket.send(this.state.input)
-    this.setState({
-      input: "",
-      messages: this.state.messages.concat({
-        message: this.state.input,
-        sender_addr: "self",
-      }),
-    })
+    const content = this.state.input.trim() //trim the input of any white space
+
+    if(content) {
+      this.socket.send(content) //send the chat to the socket
+
+      this.addChat(content, "self", "user") //add this chat to state
+
+      this.setState({ input: "" }) //clear the input
+    }
   }
 
   onNewRoomSubmit = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    window.location.href = `${window.location.origin}/${this.state.newRoom}`;
+    const newRoomURI = encodeURIComponent(this.state.newRoom)
+
+    window.location.href = `${window.location.origin}/${newRoomURI}`;
   }
 
   render() {
     return (
       <div className="App">
-        <div>{this.getConnectionStatus()}</div>
+        <h2>Current Room: {window.location.pathname} | Connection Status: {this.getConnectionStatus()}</h2>
         <br/>
         <div>
-          {this.state.messages.map((m,i) =>
-            <div key={i}>{m.sender_addr}: {m.message}</div>
+          {this.state.chats.map((m,i) =>
+            <Chat key={i} {...m}/>
           )}
         </div>
 
-        <form id="chat-form" onSubmit={this.onChatSubmit}>
-          <div><input value={this.state.input} onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}/></div>
+        <form id="chat-form" onSubmit={this.onChatTypeSubmit}>
+          <div>
+            <textarea
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => this.setState({input: e.target.value})}
+              rows={1}
+              value={this.state.input}
+            />
+          </div>
 
           <button type="submit" disabled={this.state.socketReadyState !== 1}>Send</button>
         </form>
@@ -119,8 +182,16 @@ class App extends React.Component<{},State> {
         <hr/>
 
         <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
-          <label htmlFor="new-room-input">Current Room: {window.location.pathname}</label>
-          <div><input id="new-room-input" value={this.state.newRoom} onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}/></div>
+
+          <label htmlFor="new-room-input">Change Rooms:</label>
+          <div>
+            <input
+              id="new-room-input"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
+              placeholder="Enter a new room code"
+              value={this.state.newRoom}
+            />
+          </div>
 
           <button type="submit">Go to New Room</button>
         </form>
