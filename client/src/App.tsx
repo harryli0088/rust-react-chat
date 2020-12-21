@@ -76,7 +76,7 @@ class App extends React.Component<{},State> {
 
       try {
         const parsed = JSON.parse(message.data)
-        this.addChatFromSocket(parsed.message, parsed.sender_addr, "user")
+        this.addChatFromSocket(parsed.message, parsed.sender_addr, parsed.type_key)
       }
       catch(err) {
         console.error(err)
@@ -169,9 +169,8 @@ class App extends React.Component<{},State> {
 
         <form id="chat-form" onSubmit={this.onChatTypeSubmit}>
           <div>
-            <textarea
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => this.setState({input: e.target.value})}
-              rows={1}
+            <input
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}
               value={this.state.input}
             />
           </div>

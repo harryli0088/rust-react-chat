@@ -52,6 +52,7 @@ use serde::{Deserialize, Serialize};
 struct BroadcastJsonStruct {
     message: String,
     sender_addr: SocketAddr,
+    type_key: String,
 }
 
 
@@ -87,6 +88,10 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         sender: sender,
     });
 
+
+
+
+
     //set up the incoming and outgoing
     let (outgoing, incoming) = ws_stream.split();
 
@@ -99,6 +104,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         let broadcast_data = BroadcastJsonStruct {
             message: msg.to_text().unwrap().to_owned(),
             sender_addr: client_addr.to_owned(),
+            type_key: "user".to_owned(),
         };
         let new_msg = Message::Text(
             serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
@@ -125,8 +131,38 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     pin_mut!(broadcast_incoming, receive_from_others);
     future::select(broadcast_incoming, receive_from_others).await;
 
-    println!("{} disconnected", &client_addr);
-    peer_map.lock().unwrap().remove(&client_addr);
+
+
+    //tell everyone we are disconnecting
+    //TODO figure out how to turn this into a function
+    let mut peers_disconnect = peer_map.lock().unwrap();
+
+    //make a new struct to be serialized
+    let broadcast_data = BroadcastJsonStruct {
+        message: format!("{} has disconnected", client_addr.to_owned()).to_owned(),
+        sender_addr: client_addr.to_owned(),
+        type_key: "meta".to_owned(),
+    };
+    let disconnected_msg = Message::Text(
+        serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
+    );
+    println!("New message {}", disconnected_msg.to_text().unwrap());
+
+    //filter addresses that aren't the message sender's address AND are using the same protocol
+    let broadcast_recipients = peers_disconnect.iter().filter(
+        |(peer_addr, _)|
+        peer_addr != &&client_addr
+        && peers_disconnect.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")==protocol.to_str().expect("expected a string")
+    ).map(|(_, ws_sink)| ws_sink);
+
+    //send the message to all the recipients
+    for recp in broadcast_recipients {
+        recp.sender.unbounded_send(disconnected_msg.clone()).unwrap();
+    }
+
+
+    println!("{} DISCONNECTED---------------------------", &client_addr);
+    peers_disconnect.remove(&client_addr);
 }
 
 #[tokio::main]
