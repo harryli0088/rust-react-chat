@@ -1,21 +1,4 @@
-//! A chat server that broadcasts a message to all connections.
-//!
-//! This is a simple line-based server which accepts WebSocket connections,
-//! reads lines from those connections, and broadcasts the lines to all other
-//! connected clients.
-//!
-//! You can test this out by running:
-//!
-//!     cargo run --example server 127.0.0.1:12345
-//!
-//! And then in another window run:
-//!
-//!     cargo run --example client ws://127.0.0.1:12345/
-//!
-//! You can run the second command in multiple windows and then chat between the
-//! two, seeing the messages from the other client as they're received. For all
-//! connected clients they'll all join the same room and see everyone else's
-//! messages.
+//based off this example https://github.com/snapview/tokio-tungstenite/blob/master/examples/echo-server.rs
 
 use std::{
     collections::HashMap,
@@ -26,7 +9,7 @@ use std::{
 };
 
 use futures_channel::mpsc::{unbounded, UnboundedSender};
-use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
+use futures_util::{future, stream::TryStreamExt, StreamExt};
 
 use tokio::net::{TcpListener, TcpStream};
 use tungstenite::{
@@ -58,17 +41,23 @@ struct BroadcastJsonStruct {
 
 async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr: SocketAddr) {
     println!("Incoming TCP connection from: {}, raw stream: {}", client_addr, raw_stream.local_addr().unwrap());
+
+
+    /* SET UP THE WEBSOCKET CONNECTION */
+
+    //instead of routing, this server manages chat rooms usign the protocol argument specified from the client
+    //ie in JavaScript: new WebSocket("ws://localhost:8080", protocol)
     let mut protocol = HeaderValue::from_static("");
-
     let copy_headers_callback = |request: &Request, mut response: Response| -> Result<Response, ErrorResponse> {
-        for (name, value) in request.headers().iter() {
-            println!("Name: {}, value: {}", name.to_string(), value.to_str().expect("expected a value"));
-        }
+        // for (name, value) in request.headers().iter() {
+        //     println!("Name: {}, value: {}", name.to_string(), value.to_str().expect("expected a value"));
+        // }
 
-        //access the protocol in the request, then set it in the response
-        protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned(); //save the protocol to use outside the closure
-        let response_protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned();
-        response.headers_mut().insert(SEC_WEBSOCKET_PROTOCOL, response_protocol);
+        //access the protocol in the request, then save it to use outside the closure
+        protocol = request.headers().get(SEC_WEBSOCKET_PROTOCOL).expect("the client should specify a protocol").to_owned();
+        // println!("PROTOCOL {:?}",protocol.to_owned().to_str()); //print the protocol
+        //set the protocol in the response, which is necessary to successfully create the connection
+        response.headers_mut().insert(SEC_WEBSOCKET_PROTOCOL, protocol.to_owned());
         Ok(response)
     };
 
@@ -89,22 +78,15 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     });
 
 
-
-
-
-    //set up the incoming and outgoing
-    let (outgoing, incoming) = ws_stream.split();
-
-    //this function broadcasts messages to all other connected clients using the same protocol
-    let broadcast_incoming = incoming.try_for_each(|msg| {
-        println!("Received a message from {}: {}", client_addr, msg.to_text().unwrap());
+    //this function is used to broadcast a message and type to all the other connected clients
+    let broadcast_to_other_clients = |message:String, type_key: String| {
         let peers = peer_map.lock().unwrap();
 
         //make a new struct to be serialized
         let broadcast_data = BroadcastJsonStruct {
-            message: msg.to_text().unwrap().to_owned(),
+            message,
             sender_addr: client_addr.to_owned(),
-            type_key: "user".to_owned(),
+            type_key,
         };
         let new_msg = Message::Text(
             serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
@@ -114,53 +96,55 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         //filter addresses that aren't the message sender's address AND are using the same protocol
         let broadcast_recipients = peers.iter().filter(
             |(peer_addr, _)|
-            peer_addr != &&client_addr
-            && peers.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")==protocol.to_str().expect("expected a string")
+            peer_addr != &&client_addr //this client is not this sender
+            && ( //this client's protocol is the same as this sender's
+                peers.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")
+                == protocol.to_str().expect("expected a string")
+            )
         ).map(|(_, ws_sink)| ws_sink);
 
         //send the message to all the recipients
         for recp in broadcast_recipients {
             recp.sender.unbounded_send(new_msg.clone()).unwrap();
         }
+    };
+
+
+
+
+
+    /* SUCCESSFULL CONNECTED */
+
+    //tell everyone we've connected
+    broadcast_to_other_clients(format!("{} has connected", client_addr.to_owned()).to_owned(), "meta".to_owned());
+
+
+
+
+    /* WAITING FOR MESSAGES */
+
+    //set up the incoming and outgoing
+    let (outgoing, incoming) = ws_stream.split();
+    //this function receives incoming messages and tries to broadcast them to the other clients
+    let broadcast_incoming = incoming.try_for_each(|msg| {
+        println!("Received a message from {}: {}", client_addr, msg.to_text().unwrap());
+
+        broadcast_to_other_clients(msg.to_text().unwrap().to_owned(), "user".to_owned());
 
         future::ok(())
     });
-
     let receive_from_others = receiver.map(Ok).forward(outgoing);
-
-    pin_mut!(broadcast_incoming, receive_from_others);
     future::select(broadcast_incoming, receive_from_others).await;
 
 
 
-    //tell everyone we are disconnecting
-    //TODO figure out how to turn this into a function
+    /* DISCONNECTING */
+
+    //tell everyone we're disconnecting
+    broadcast_to_other_clients(format!("{} has disconnected", client_addr.to_owned()).to_owned(), "meta".to_owned());
+
+    //remove this client from the peer map
     let mut peers_disconnect = peer_map.lock().unwrap();
-
-    //make a new struct to be serialized
-    let broadcast_data = BroadcastJsonStruct {
-        message: format!("{} has disconnected", client_addr.to_owned()).to_owned(),
-        sender_addr: client_addr.to_owned(),
-        type_key: "meta".to_owned(),
-    };
-    let disconnected_msg = Message::Text(
-        serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
-    );
-    println!("New message {}", disconnected_msg.to_text().unwrap());
-
-    //filter addresses that aren't the message sender's address AND are using the same protocol
-    let broadcast_recipients = peers_disconnect.iter().filter(
-        |(peer_addr, _)|
-        peer_addr != &&client_addr
-        && peers_disconnect.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")==protocol.to_str().expect("expected a string")
-    ).map(|(_, ws_sink)| ws_sink);
-
-    //send the message to all the recipients
-    for recp in broadcast_recipients {
-        recp.sender.unbounded_send(disconnected_msg.clone()).unwrap();
-    }
-
-
     println!("{} DISCONNECTED---------------------------", &client_addr);
     peers_disconnect.remove(&client_addr);
 }
