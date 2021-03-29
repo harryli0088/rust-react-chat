@@ -128,7 +128,15 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     let broadcast_incoming = incoming.try_for_each(|msg| {
         println!("Received a message from {}: {}", client_addr, msg.to_text().unwrap());
 
-        broadcast_to_other_clients(msg.to_text().unwrap().to_owned(), "user".to_owned());
+        //if this is not an empty ping message
+        //pings are required to keep AWS Elastic Beanstalk WebSocket connections open
+        if msg.to_text().unwrap() != "" {
+            broadcast_to_other_clients(msg.to_text().unwrap().to_owned(), "user".to_owned());
+        }
+        // else {
+        //     println!("PING")
+        // }
+
 
         future::ok(())
     });

@@ -20,6 +20,7 @@ class App extends React.Component<Props,State> {
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
   lastType: string = ""
+  pingInterval: number = -1
   socket: WebSocket
 
   constructor(props:Props) {
@@ -76,12 +77,12 @@ class App extends React.Component<Props,State> {
   }
 
   setUpSocket = () => {
-    console.log("I RUN")
     const socket = new WebSocket(WS_SERVER_URL, this.props.location.pathname.replace(/\//ig, "-"))
     socket.onopen = () => {
-      console.log("OPEN RUNS")
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
       this.setState({socketReadyState: socket.readyState})
+      clearInterval(this.pingInterval)
+      this.pingInterval = window.setInterval(this.ping, 30000)
     }
 
     socket.onmessage = (message:MessageEvent<any>) => {
@@ -98,12 +99,13 @@ class App extends React.Component<Props,State> {
     }
 
     socket.onclose = () => {
-      console.log("CLOSE")
       this.setState({socketReadyState: socket.readyState})
     }
 
     return socket
   }
+
+  ping = () => this.socket.send("")
 
   addChatFromSocket = (content: string, senderAddr:string, type: string) => {
     this.addChat(content, senderAddr, type) //add the chat to state
@@ -170,7 +172,6 @@ class App extends React.Component<Props,State> {
   }
 
   render() {
-    console.log(this.props)
     const connectionStatus = this.getConnectionStatus()
 
     return (
