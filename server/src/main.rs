@@ -152,8 +152,9 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
 #[tokio::main]
 async fn main() -> Result<(), IoError> {
-    //see if there is a server address specified in the command line argument, else use default address
-    let server_addr = env::args().nth(1).unwrap_or_else(|| "127.0.0.1:8080".to_string());
+    // Get the port number to listen on (required for heroku deployment).
+    let port = env::var("PORT").unwrap_or_else(|_| "1234".to_string());
+    let server_addr = format!("0.0.0.0:{}", port);
 
     let state = PeerMap::new(Mutex::new(HashMap::new()));
 
