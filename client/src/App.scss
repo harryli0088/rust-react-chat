@@ -72,8 +72,8 @@ $sidebar-width-tablet: 200px;
       #chat-form {
         position: absolute;
         bottom: 0.6em;
-        left: 1em;
-        right: 1em;
+        left: 0;
+        right: 0;
 
         button {
           width: 4em;
@@ -83,7 +83,7 @@ $sidebar-width-tablet: 200px;
         }
 
         input {
-          width: calc(100% - 6em);
+          width: calc(100% - 7em);
           border-top-right-radius: 0;
           border-bottom-right-radius: 0;
         }
