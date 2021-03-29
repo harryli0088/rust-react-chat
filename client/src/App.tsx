@@ -66,6 +66,7 @@ class App extends React.Component<Props,State> {
 
   componentDidUpdate(prevProps:Props) {
     if(prevProps.location.pathname !== this.props.location.pathname) {
+      this.socket.close()
       this.socket = this.setUpSocket()
     }
   }
