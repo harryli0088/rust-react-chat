@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/rust-react-chat/static/css/main.48d5cd03.chunk.css",
-    "main.js": "/rust-react-chat/static/js/main.fa7957d8.chunk.js",
-    "main.js.map": "/rust-react-chat/static/js/main.fa7957d8.chunk.js.map",
+    "main.js": "/rust-react-chat/static/js/main.139b3f28.chunk.js",
+    "main.js.map": "/rust-react-chat/static/js/main.139b3f28.chunk.js.map",
     "runtime-main.js": "/rust-react-chat/static/js/runtime-main.8e6d2d2f.js",
     "runtime-main.js.map": "/rust-react-chat/static/js/runtime-main.8e6d2d2f.js.map",
     "static/js/2.282bb005.chunk.js": "/rust-react-chat/static/js/2.282bb005.chunk.js",
@@ -18,6 +18,6 @@
     "static/js/runtime-main.8e6d2d2f.js",
     "static/js/2.282bb005.chunk.js",
     "static/css/main.48d5cd03.chunk.css",
-    "static/js/main.fa7957d8.chunk.js"
+    "static/js/main.139b3f28.chunk.js"
   ]
 }
