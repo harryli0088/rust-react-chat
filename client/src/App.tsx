@@ -11,6 +11,8 @@ interface State {
   socketReadyState: number,
 }
 
+const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
+
 class App extends React.Component<{},State> {
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
@@ -65,7 +67,7 @@ class App extends React.Component<{},State> {
 
   setUpSocket = () => {
     console.log("I RUN")
-    const socket = new WebSocket("ws://localhost:8080", window.location.pathname.replace(/\//ig, "-"))
+    const socket = new WebSocket(WS_SERVER_URL, window.location.pathname.replace(/\//ig, "-"))
     socket.onopen = () => {
       console.log("OPEN RUNS")
       this.addChat(<span>You have joined the chat room <span className="blob">{window.location.pathname}</span></span>, "self", "meta")
