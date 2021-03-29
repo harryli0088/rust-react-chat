@@ -2,7 +2,7 @@ import React from 'react';
 import "./chat.scss"
 
 export type ChatType = {
-  content: string,
+  content: React.ReactNode,
   date: Date,
   senderAddr: string,
   showSenderAddr: boolean,
@@ -31,9 +31,11 @@ class Chat extends React.Component<ChatType,State> {
             <div>
               {this.showSenderAddr()}
               <span className="content">
-                <pre>
-                  {this.props.content}
-                </pre>
+                {
+                  typeof this.props.content === "string"
+                  ? <pre>{this.props.content}</pre>
+                  : this.props.content
+                }
               </span>
             </div>
           </div>

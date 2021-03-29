@@ -9,7 +9,7 @@ use std::{
 };
 
 use futures_channel::mpsc::{unbounded, UnboundedSender};
-use futures_util::{future, stream::TryStreamExt, StreamExt};
+use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 
 use tokio::net::{TcpListener, TcpStream};
 use tungstenite::{
@@ -112,7 +112,6 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
 
 
-
     /* SUCCESSFULL CONNECTED */
 
     //tell everyone we've connected
@@ -134,7 +133,9 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         future::ok(())
     });
     let receive_from_others = receiver.map(Ok).forward(outgoing);
+    pin_mut!(broadcast_incoming, receive_from_others);
     future::select(broadcast_incoming, receive_from_others).await;
+
 
 
 

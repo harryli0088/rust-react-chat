@@ -2,7 +2,7 @@ $margin: 20px;
 
 @mixin small-gray-text {
   margin-bottom: 5px;
-  color: gray;
+  color: #ccc;
   font-size: 12px;
 }
 
@@ -14,15 +14,11 @@ $margin: 20px;
 
     .sender {
       margin-top: $margin;
-      margin-left: $margin;
-      margin-right: $margin;
       @include small-gray-text;
     }
 
     .content {
       display: inline-block;
-      margin-left: $margin;
-      margin-right: $margin;
       margin-bottom: 5px;
       padding: 0.5em;
       border-radius: 5px;
@@ -51,6 +47,7 @@ $margin: 20px;
     &.meta {
       flex-direction: row;
       justify-content: center;
+      text-align: center;
 
       .sender {
         display: none;

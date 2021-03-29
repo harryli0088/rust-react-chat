@@ -1,38 +1,150 @@
-.App {
-  text-align: center;
-}
+$sidebar-width: 400px;
+$sidebar-width-tablet: 200px;
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+#App {
+  background-color: #333;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: white;
+  letter-spacing: 1px;
+
+  display: flex;
+  flex-direction: row-reverse;
+
+  #sidebar {
+    width: $sidebar-width;
+    border-right: 1px solid white;
+    padding: 1em;
+    position: relative;
+
+    #github {
+      position: absolute;
+      top: 1em;
+      right: 1em;
+      transition: 0.5s;
+
+      &:hover {
+        transform: scale(1.25);
+      }
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    #new-room-form {
+      label {
+        margin-bottom: 0.5em;
+        display: block;
+      }
+    }
+  }
+
+  #content {
+    text-align: center;
+    width: calc(100% - #{$sidebar-width});
+    background-color: #555;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+    height: 100vh;
+
+    #header {
+      padding-top: 0.5em;
+      padding-bottom: 1em;
+      font-weight: bold;
+      background-color: #333;
+    }
+
+    #chat-container {
+      overflow-y: auto;
+      border-top: 1px solid white;
+      border-bottom: 1px solid white;
+      height: 100%;
+    }
+
+    #chat-form-container {
+      position: relative;
+      background-color: #333;
+      height: 4em;
+
+      #chat-form {
+        position: absolute;
+        bottom: 0.6em;
+        left: 1em;
+        right: 1em;
+
+        button {
+          width: 4em;
+          border-top-left-radius: 0;
+          border-bottom-left-radius: 0;
+          background-color: #17A589;
+        }
+
+        input {
+          width: calc(100% - 6em);
+          border-top-right-radius: 0;
+          border-bottom-right-radius: 0;
+        }
+      }
+    }
+  }
+
+  @media only screen and (max-width: 800px) {
+    #sidebar {
+      width: $sidebar-width-tablet;
+    }
+
+    #content {
+      width: calc(100% - #{$sidebar-width-tablet});
+    }
+  }
+
+  @media only screen and (max-width: 600px) {
+    flex-direction: column;
+
+    #sidebar, #content {
+      width: auto;
+    }
+
+    #sidebar {
+      border-top: 1px solid white;
+      border-right: none;
+    }
+  }
+
+  .blob {
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    margin-top: 0.5em;
+    background: gray;
+    border-radius: 3px;
+    font-weight: bold;
+    display: inline-block;
+
+    &.Connected {
+      background: #28B463;
+    }
+    &.Closed {
+      background: #E74C3C;
+    }
+  }
 }
 
-.App-link {
-  color: #61dafb;
-}
+.container {
+  padding-left: 1em;
+  padding-right: 1em;
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  // @media only screen and (min-width: 600px) {
+  //   padding-left: 5vw;
+  //   padding-right: 5vw;
+  // }
+  //
+  // @media only screen and (min-width: 1000px) {
+  //   padding-left: calc(50vw - 400px);
+  //   padding-right: calc(50vw - 400px);
+  // }
 }
