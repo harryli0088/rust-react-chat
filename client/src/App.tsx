@@ -213,6 +213,7 @@ class App extends React.Component<Props,State> {
             <li>Chat rooms distinguished by route (via WebSocket protocol)</li>
             <li>Alerts when a client connects or disconnects</li>
           </ul>
+          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
 
           <hr/>
 
