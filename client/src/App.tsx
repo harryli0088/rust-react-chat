@@ -1,8 +1,10 @@
 import React from 'react'
 import Chat, { ChatType } from "Components/Chat/Chat"
 import github from "github.svg"
+import { withRouter, RouteComponentProps } from "react-router"
 import 'App.scss'
 
+type Props = RouteComponentProps
 
 interface State {
   input: string,
@@ -13,13 +15,13 @@ interface State {
 
 const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
 
-class App extends React.Component<{},State> {
+class App extends React.Component<Props,State> {
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
   lastType: string = ""
   socket: WebSocket
 
-  constructor(props:{}) {
+  constructor(props:Props) {
     super(props)
 
     this.state = {
@@ -61,16 +63,22 @@ class App extends React.Component<{},State> {
     this.socket = this.setUpSocket()
   }
 
+  componentDidUpdate(prevProps:Props) {
+    if(prevProps.location.pathname !== this.props.location.pathname) {
+      this.socket = this.setUpSocket()
+    }
+  }
+
   componentWillUnmount() {
     this.socket.close()
   }
 
   setUpSocket = () => {
     console.log("I RUN")
-    const socket = new WebSocket(WS_SERVER_URL, window.location.pathname.replace(/\//ig, "-"))
+    const socket = new WebSocket(WS_SERVER_URL, this.props.location.pathname.replace(/\//ig, "-"))
     socket.onopen = () => {
       console.log("OPEN RUNS")
-      this.addChat(<span>You have joined the chat room <span className="blob">{window.location.pathname}</span></span>, "self", "meta")
+      this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
       this.setState({socketReadyState: socket.readyState})
     }
 
@@ -156,17 +164,18 @@ class App extends React.Component<{},State> {
 
     const newRoomURI = encodeURIComponent(this.state.newRoom)
 
-    window.location.href = `${window.location.origin}/${newRoomURI}`;
+    this.props.history.push(newRoomURI)
   }
 
   render() {
+    console.log(this.props)
     const connectionStatus = this.getConnectionStatus()
 
     return (
       <div id="App">
         <div id="content">
           <div id="header" className="container">
-            Current Room: <span  className="blob">{window.location.pathname}</span> <span className={`blob  ${connectionStatus}`}>{connectionStatus}</span>
+            Current Room: <span  className="blob">{this.props.location.pathname}</span> <span className={`blob  ${connectionStatus}`}>{connectionStatus}</span>
           </div>
 
           <div id="chat-container" className="container">
@@ -229,4 +238,4 @@ class App extends React.Component<{},State> {
   }
 }
 
-export default App;
+export default withRouter(App)
