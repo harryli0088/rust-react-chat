@@ -2,6 +2,7 @@ import React from 'react'
 import Chat, { ChatType } from "Components/Chat/Chat"
 import github from "github.svg"
 import { withRouter, RouteComponentProps } from "react-router"
+import clientPackage from "../package.json"
 import 'App.scss'
 
 type Props = RouteComponentProps
@@ -201,7 +202,8 @@ class App extends React.Component<Props,State> {
           <a id="github" href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer"><img src={github} alt="github repo"/></a>
 
           <h2>React - Rust Chat App</h2>
-          <div>I created this chat room prototype to learn how to use Rust. The Rust server features include:</div>
+          <p>Version {clientPackage.version}</p>
+          <p>I created this chat room prototype to learn how to use Rust. The Rust server features include:</p>
           <ul>
             <li>WebSocket server</li>
             <li>Chat rooms distinguished by route (via WebSocket protocol)</li>
