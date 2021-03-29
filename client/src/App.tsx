@@ -59,7 +59,7 @@ class App extends React.Component<Props,State> {
         // },
       ],
       newRoom: "",
-      socketReadyState: -1,
+      socketReadyState: 0,
     }
 
     this.socket = this.setUpSocket()
@@ -77,6 +77,7 @@ class App extends React.Component<Props,State> {
   }
 
   setUpSocket = () => {
+    this.setState({socketReadyState: 0})
     const socket = new WebSocket(WS_SERVER_URL, this.props.location.pathname.replace(/\//ig, "-"))
     socket.onopen = () => {
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
