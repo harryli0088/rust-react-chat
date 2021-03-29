@@ -1,8 +1,8 @@
 {
   "files": {
-    "main.css": "/rust-react-chat/static/css/main.48d5cd03.chunk.css",
-    "main.js": "/rust-react-chat/static/js/main.2d09620f.chunk.js",
-    "main.js.map": "/rust-react-chat/static/js/main.2d09620f.chunk.js.map",
+    "main.css": "/rust-react-chat/static/css/main.6886e836.chunk.css",
+    "main.js": "/rust-react-chat/static/js/main.bd7cb2a9.chunk.js",
+    "main.js.map": "/rust-react-chat/static/js/main.bd7cb2a9.chunk.js.map",
     "runtime-main.js": "/rust-react-chat/static/js/runtime-main.934e6524.js",
     "runtime-main.js.map": "/rust-react-chat/static/js/runtime-main.934e6524.js.map",
     "static/js/2.855cbd93.chunk.js": "/rust-react-chat/static/js/2.855cbd93.chunk.js",
@@ -10,14 +10,14 @@
     "static/js/3.36922820.chunk.js": "/rust-react-chat/static/js/3.36922820.chunk.js",
     "static/js/3.36922820.chunk.js.map": "/rust-react-chat/static/js/3.36922820.chunk.js.map",
     "index.html": "/rust-react-chat/index.html",
-    "static/css/main.48d5cd03.chunk.css.map": "/rust-react-chat/static/css/main.48d5cd03.chunk.css.map",
+    "static/css/main.6886e836.chunk.css.map": "/rust-react-chat/static/css/main.6886e836.chunk.css.map",
     "static/js/2.855cbd93.chunk.js.LICENSE.txt": "/rust-react-chat/static/js/2.855cbd93.chunk.js.LICENSE.txt",
     "static/media/github.7ef381bc.svg": "/rust-react-chat/static/media/github.7ef381bc.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.934e6524.js",
     "static/js/2.855cbd93.chunk.js",
-    "static/css/main.48d5cd03.chunk.css",
-    "static/js/main.2d09620f.chunk.js"
+    "static/css/main.6886e836.chunk.css",
+    "static/js/main.bd7cb2a9.chunk.js"
   ]
 }
