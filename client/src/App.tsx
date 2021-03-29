@@ -182,9 +182,11 @@ class App extends React.Component<Props,State> {
           </div>
 
           <div id="chat-container" className="container">
-            {this.state.chats.map((m,i) =>
-              <Chat key={i} {...m}/>
-            )}
+            <div>
+              {this.state.chats.map((m,i) =>
+                <Chat key={i} {...m}/>
+              )}
+            </div>
           </div>
 
           <div id="chat-form-container">
