@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import "./chat.scss"
 
 export type ChatType = {
@@ -12,8 +12,8 @@ export type ChatType = {
 interface State {}
 
 class Chat extends React.Component<ChatType,State> {
-
   showSenderAddr = () => {
+    //if this message should show the sender address
     if(this.props.showSenderAddr) {
       const displaySenderAddr = this.props.senderAddr==="self" ? "You" : this.props.senderAddr
 
@@ -24,6 +24,7 @@ class Chat extends React.Component<ChatType,State> {
   }
 
   render() {
+    //if this message has content to show
     if(this.props.content) {
       return (
         <div className="message-container">
@@ -40,11 +41,11 @@ class Chat extends React.Component<ChatType,State> {
             </div>
           </div>
         </div>
-      );
+      )
     }
 
-    return null;
+    return null
   }
 }
 
-export default Chat;
+export default Chat

@@ -17,11 +17,13 @@ interface State {
 const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
 
 class App extends React.Component<Props,State> {
+  //meta data trackers used to determine when to show gray label text
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
   lastType: string = ""
-  pingInterval: number = -1
-  socket: WebSocket
+
+  pingInterval: number = -1 //pinging is important to keep WebSocket connections alive when using AWS Elastic Beanstalk
+  socket: WebSocket //socket connected to the chat server
 
   constructor(props:Props) {
     super(props)
@@ -66,9 +68,10 @@ class App extends React.Component<Props,State> {
   }
 
   componentDidUpdate(prevProps:Props) {
+    //if the URL (ie the room) has changed
     if(prevProps.location.pathname !== this.props.location.pathname) {
-      this.socket.close()
-      this.socket = this.setUpSocket()
+      this.socket.close() //close the current socket connection
+      this.socket = this.setUpSocket() //then open up a new one for the new URL
     }
   }
 
@@ -77,26 +80,32 @@ class App extends React.Component<Props,State> {
   }
 
   setUpSocket = () => {
-    this.setState({socketReadyState: 0})
-    const socket = new WebSocket(WS_SERVER_URL, this.props.location.pathname.replace(/\//ig, "-"))
+    this.setState({socketReadyState: 0}) //mark that we are making a new WebSocket connection
+    const socket = new WebSocket( //try connecting to the server
+      WS_SERVER_URL,
+      this.props.location.pathname.replace(/\//ig, "-") //pass the URL pathname as the protocol ('/' characters are replaced with '-')
+    )
+
     socket.onopen = () => {
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
-      this.setState({socketReadyState: socket.readyState})
-      clearInterval(this.pingInterval)
-      this.pingInterval = window.setInterval(this.ping, 30000)
+      this.setState({socketReadyState: socket.readyState}) //mark the new socket state
+      clearInterval(this.pingInterval) //clear the previous interval
+      this.pingInterval = window.setInterval(this.ping, 30000) //set up an interval to ping the server
     }
 
     socket.onmessage = (message:MessageEvent<any>) => {
-      console.log("MESSAGE", message)
-
+      // console.log("MESSAGE", message)
       try {
-        const parsed = JSON.parse(message.data)
-        this.addChatFromSocket(parsed.message, parsed.sender_addr, parsed.type_key)
+        const parsed = JSON.parse(message.data) //try parsing the message as JSON
+        this.addChatFromSocket( //add this message to state
+          parsed.message,
+          parsed.sender_addr,
+          parsed.type_key
+        )
       }
       catch(err) {
         console.error(err)
       }
-
     }
 
     socket.onclose = () => {
@@ -106,7 +115,7 @@ class App extends React.Component<Props,State> {
     return socket
   }
 
-  ping = () => this.socket.send("")
+  ping = () => this.socket.send("") //send empty string
 
   addChatFromSocket = (content: string, senderAddr:string, type: string) => {
     this.addChat(content, senderAddr, type) //add the chat to state
@@ -122,8 +131,10 @@ class App extends React.Component<Props,State> {
       content,
       date,
       senderAddr,
-      showSenderAddr: this.lastSenderAddr !== senderAddr
-      || this.lastType !== type, //set whether we should show the sender addr
+      showSenderAddr: ( //whether we should show the sender addr
+        this.lastSenderAddr !== senderAddr //if this sender is different
+        || this.lastType !== type //if the message type is different
+      ),
       type,
     }
 
@@ -167,9 +178,9 @@ class App extends React.Component<Props,State> {
   onNewRoomSubmit = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    const newRoomURI = encodeURIComponent(this.state.newRoom)
+    const newRoomURI = encodeURIComponent(this.state.newRoom) //URI encode the inputed string
 
-    this.props.history.push(newRoomURI)
+    this.props.history.push(newRoomURI) //go to the new URL (ie change rooms)
   }
 
   render() {
