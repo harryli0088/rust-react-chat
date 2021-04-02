@@ -26,3 +26,6 @@ heroku config:set YOUR_ENV_VARIABLE=value #set environment variable
 
 ## Misc
 - Heroku probably deploys to AWS by default, using Elastic Beanstalk as a load balancer. Pinging is therefore necessary to keep the WebSocket connections alive, otherwise AWS EB times out after two minutes or so.
+
+## License
+MIT License
