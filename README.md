@@ -6,6 +6,12 @@ Live Site (Note: Heroku free tier server takes several seconds to wake up from s
 
 This is a chat application I built using React, TypeScript, and Rust. I deployed the client to Github pages and the server to Heroku.
 
+## Development
+```
+npm i
+npm start
+```
+
 ## Client Deploy
 https://create-react-app.dev/docs/deployment/#github-pages
 

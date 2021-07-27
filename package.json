@@ -1,0 +1,24 @@
+{
+  "name": "rust-react-chat",
+  "version": "1.0.0",
+  "description": "Live Site (Note: Heroku free tier server takes several seconds to wake up from sleep mode): https://harryli0088.github.io/rust-react-chat/",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"cd client && npm start\" \"cd server && cargo watch -x 'run'\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "cd client && npm i"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harryli0088/rust-react-chat.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/harryli0088/rust-react-chat/issues"
+  },
+  "homepage": "https://github.com/harryli0088/rust-react-chat#readme",
+  "devDependencies": {
+    "concurrently": "^6.2.0"
+  }
+}
