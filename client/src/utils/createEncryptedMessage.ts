@@ -1,7 +1,7 @@
 import encrypt from "./encrypt";
 import getMAC from "./getMac";
 
-type EncryptedMessageType = {
+export type EncryptedMessageType = {
   c: string,    //cipher
   iv: string,   //initialization vector
   mac: string,  //Message Authentication Code (MAC)
@@ -13,7 +13,7 @@ type EncryptedMessageType = {
  * @param derivedKey  derived symmetric key 
  * @returns           
  */
-export default async function createMessage(
+export default async function createEncryptedMessage(
   plaintext: string,
   derivedKey: CryptoKey,
 ): Promise<EncryptedMessageType> {

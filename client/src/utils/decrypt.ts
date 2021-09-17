@@ -7,7 +7,7 @@
  */
 export default async function decrypt(
   cipher: string,
-  initializationVector: Uint8Array,
+  initializationVector: string,
   derivedKey: CryptoKey
 ) {
   try {
@@ -17,7 +17,7 @@ export default async function decrypt(
     );
     const algorithm = {
       name: "AES-GCM",
-      iv: initializationVector,
+      iv: new TextEncoder().encode(initializationVector),
     };
     const decryptedData = await window.crypto.subtle.decrypt(
       algorithm,
