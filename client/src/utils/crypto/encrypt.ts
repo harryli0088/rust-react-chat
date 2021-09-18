@@ -1,3 +1,5 @@
+import arrToStr from "utils/arrToStr"
+
 /**
  * This function encrypts a message using a derived key
  * @param plaintext   plaintext message
@@ -13,20 +15,21 @@ export default async function encrypt(
   //generate a random initialization vector 16 bytes (96 bits) long
   //https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams
   const initializationVector = crypto.getRandomValues(new Uint8Array(16))
-  console.log("initializationVector",initializationVector,initializationVector.length)
   const encryptedData = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: initializationVector }, //TODO learn this
+    {
+      name: "AES-GCM",
+      iv: initializationVector
+    },
     derivedKey,
     encodedText
   )
 
-  const uintArray = new Uint8Array(encryptedData)
 
-  const string = String.fromCharCode(...uintArray)
+  //convert the cipher into a string
+  const cipherStr = arrToStr(new Uint8Array(encryptedData))
 
-  // console.log(new TextEncoder("utf-8").encode(new TextDecoder("utf-8").decode( initializationVector )))
   return {
-    c: btoa(string), //cipher
-    iv: String.fromCharCode(...initializationVector) //decode the initialization vector to a string
+    c: btoa(cipherStr), //cipher, TODO need btoa?
+    iv: arrToStr(initializationVector) //convert the initialization vector to a string
   }
 }

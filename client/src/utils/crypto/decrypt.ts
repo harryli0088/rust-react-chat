@@ -1,45 +1,28 @@
+import strToArr from "utils/strToArr"
+
 /**
- * 
- * @param cipher 
- * @param initializationVector 
- * @param derivedKey 
- * @returns 
+ * Decrypt a message using the symmetric key.
+ * You should wrap this in a try/catch.
+ * @param cipherStr   cipher in string form
+ * @param ivStr       initialization vector in string form
+ * @param derivedKey  derived symmetric key 
+ * @returns           Promise for decrypted plaintext message
  */
 export default async function decrypt(
-  cipher: string,
-  initializationVector: string,
+  cipherStr: string,
+  ivStr: string,
   derivedKey: CryptoKey
 ) {
-  const iv = crypto.getRandomValues(new Uint8Array(16))
-  const encryptedData = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv }, //TODO learn this
-    derivedKey,
-    new TextEncoder().encode("testing123")
-  )
-  const ddd = await window.crypto.subtle.decrypt(
-    { name: "AES-GCM", iv },
-    derivedKey,
-    encryptedData
-  )
-  console.log("ddd", new TextDecoder().decode(ddd))
-  
+  const cipherStrArray = strToArr(atob(cipherStr)) //TODO need atob?
 
-
-  ////////
-  const cipherArray = Uint8Array.from([...atob(cipher)].map(ch => ch.charCodeAt()))
-
-  console.log("test 1")
-  console.log("iv",Uint8Array.from([...initializationVector].map(ch => ch.charCodeAt())))
   const decryptedData = await window.crypto.subtle.decrypt(
     {
       name: "AES-GCM", //TODO learn this
-      iv: Uint8Array.from([...initializationVector].map(ch => ch.charCodeAt())),
+      iv: strToArr(ivStr), //convert the iv string to an array
     },
     derivedKey,
-    cipherArray
+    cipherStrArray
   )
 
-  console.log("test 2")
-  console.log(decryptedData, new TextDecoder().decode(decryptedData))
   return new TextDecoder().decode(decryptedData)
 }
