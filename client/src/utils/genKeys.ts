@@ -16,12 +16,12 @@ export default async function genKeys():Promise<{
     ["deriveKey", "deriveBits"]
   );
 
-  const publicKeyJwk:JsonWebKey = await crypto.subtle.exportKey(
+  const publicKeyJwk:JsonWebKey = await window.crypto.subtle.exportKey(
     "jwk",
     keyPair.publicKey
   );
 
-  const privateKeyJwk:JsonWebKey = await crypto.subtle.exportKey(
+  const privateKeyJwk:JsonWebKey = await window.crypto.subtle.exportKey(
     "jwk",
     keyPair.privateKey
   );

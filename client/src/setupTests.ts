@@ -5,10 +5,12 @@
 import '@testing-library/jest-dom';
 
 import crypto from "crypto"
+const { TextDecoder, TextEncoder } = require('util')
 
 //https://stackoverflow.com/questions/52612122/how-to-use-jest-to-test-functions-using-crypto-or-window-mscrypto
 Object.defineProperty(global.self, "crypto", {
-  value: {
-    subtle: crypto.webcrypto.subtle,
-  },
+  value: crypto.webcrypto,
 })
+
+global.TextDecoder = TextDecoder
+global.TextEncoder = TextEncoder

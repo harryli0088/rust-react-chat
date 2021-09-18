@@ -4,7 +4,7 @@
  * Based off this tutorial https://getstream.io/blog/web-crypto-api-chat/
  * @param publicKeyJwk  a public key in JSON web key format
  * @param privateKeyJwk a separate private key in JSON web key format
- * @returns 
+ * @returns             a derived symmetric key
  */
 export default async function deriveKey (
   publicKeyJwk: JsonWebKey, 
@@ -15,8 +15,8 @@ export default async function deriveKey (
     "jwk",
     publicKeyJwk,
     {
-      name: "ECDH",
-      namedCurve: "P-256",
+      name: "ECDH", //TODO learn this
+      namedCurve: "P-256", //TODO learn this
     },
     true,
     []
@@ -30,7 +30,7 @@ export default async function deriveKey (
       namedCurve: "P-256",
     },
     true,
-    ["deriveKey", "deriveBits"]
+    ["deriveKey", "deriveBits"] //TODO learn this
   );
 
   /* Derive the key */
