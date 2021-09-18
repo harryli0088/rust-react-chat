@@ -1,6 +1,6 @@
 import { Validator } from "jsonschema"
 
-import genKeys, { JWK_KEY_PAIR_SCHEMA, PRIVATE_KEY_JWK_SCHEMA, PUBLIC_KEY_JWK_SCHEMA } from "utils/genKeys"
+import genKeys, { JWK_KEY_PAIR_SCHEMA, PRIVATE_KEY_JWK_SCHEMA, PUBLIC_KEY_JWK_SCHEMA } from "utils/crypto/genKeys"
 
 const v = new Validator()
 v.addSchema(PRIVATE_KEY_JWK_SCHEMA)

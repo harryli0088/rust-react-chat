@@ -1,7 +1,7 @@
-import deriveKey from "utils/deriveKey"
-import decrypt from "utils/decrypt"
-import encrypt from "utils/encrypt"
-import genKeys from "utils/genKeys"
+import deriveKey from "utils/crypto/deriveKey"
+import decrypt from "utils/crypto/decrypt"
+import encrypt from "utils/crypto/encrypt"
+import genKeys from "utils/crypto/genKeys"
 
 test("decrypt", async () => {
   const pair1 = await genKeys()

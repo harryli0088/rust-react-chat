@@ -1,8 +1,8 @@
 import { validate } from "jsonschema"
 
-import deriveKey from "utils/deriveKey"
-import encrypt from "utils/encrypt"
-import genKeys from "utils/genKeys"
+import deriveKey from "utils/crypto/deriveKey"
+import encrypt from "utils/crypto/encrypt"
+import genKeys from "utils/crypto/genKeys"
 
 test("encrypt", async () => {
   const pair1 = await genKeys()
