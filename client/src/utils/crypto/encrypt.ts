@@ -17,9 +17,9 @@ export default async function encrypt(
 ):Promise<EncryptedMessageType> {
   const encodedText = new TextEncoder().encode(plaintext)
 
-  //generate a random initialization vector 16 bytes (96 bits) long
+  //generate a random initialization vector 12 bytes (96 bits) long
   //https://developer.mozilla.org/en-US/docs/Web/API/AesGcmParams
-  const initializationVector = crypto.getRandomValues(new Uint8Array(16))
+  const initializationVector = crypto.getRandomValues(new Uint8Array(12))
   const encryptedData = await window.crypto.subtle.encrypt(
     {
       name: "AES-GCM",

@@ -22,7 +22,7 @@ export const ENCRYPT_SCHEMA = {
   "type": "object",
   "properties": {
     "c": { "type": "string", maxLength: 48, minLength: 48 },
-    "iv": { "type": "string", maxLength: 16, minLength: 1 },
+    "iv": { "type": "string", maxLength: 12, minLength: 12 },
   },
   "required": ["c","iv"]
 }

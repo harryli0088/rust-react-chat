@@ -14,6 +14,20 @@ export default async function decrypt(
 ) {
   const cipherStrArray = strToArr(atob(message.c)) //TODO need atob?
 
+  /**
+   * AES-GCM validates the integrity of the plaintext and IV without needing a Message Authentication Code
+   * https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
+   * Page 8: "GCM protects the authenticity of the plaintext and the AAD;
+   * GCM also protects the confidentiality of the plaintext,
+   * while the AAD is left in the clear"
+   * Page 26: "If the output is the plaintext, then the design of the mode provides strong, but not
+   * absolute, assurance that the purported source of the data created the tag, i.e., that the
+   * plaintext and the AAD (and the IV and the tag) are authentic. Consequently, the mode
+   * also provides strong assurance that this information was not subsequently altered, either
+   * intentionally or unintentionally."
+   * Page 26: "If the output is FAIL, then it is certain that at least one of the given inputs
+   * (i.e., the ciphertext, the AAD, the IV, or the tag) is not authentic."
+   */
   const decryptedData = await window.crypto.subtle.decrypt(
     {
       name: "AES-GCM", //TODO learn this
