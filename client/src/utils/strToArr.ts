@@ -4,5 +4,5 @@
  * @returns   Uint8Array
  */
 export default function strToArr(str: string) {
-  return Uint8Array.from([...str].map(ch => ch.charCodeAt()))
+  return Uint8Array.from([...str].map(ch => ch.charCodeAt(0)))
 }

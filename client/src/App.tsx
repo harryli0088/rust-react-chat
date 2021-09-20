@@ -4,10 +4,13 @@ import github from "github.svg"
 import { withRouter, RouteComponentProps } from "react-router"
 import clientPackage from "../package.json"
 import 'App.scss'
+import { EncryptedMessageType } from 'utils/crypto/encrypt'
+import genKeys from 'utils/crypto/genKeys'
 
 type Props = RouteComponentProps
 
 interface State {
+  encrypt: boolean,
   input: string,
   chats: ChatType[],
   newRoom: string,
@@ -17,18 +20,29 @@ interface State {
 const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
 
 class App extends React.Component<Props,State> {
+
+  keyMap: { //this maps the sender address to the public and derived keys
+    [senderAddr:string]: {
+      public: JsonWebKey,
+      derived: CryptoKey,
+    }
+  } = {}
+
   //meta data trackers used to determine when to show gray label text
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
   lastType: string = ""
 
   pingInterval: number = -1 //pinging is important to keep WebSocket connections alive when using AWS Elastic Beanstalk
+  privateKeyJwk: JsonWebKey
+  publicKeyJwk: JsonWebKey
   socket: WebSocket //socket connected to the chat server
 
   constructor(props:Props) {
     super(props)
 
     this.state = {
+      encrypt: true,
       input: "",
       chats: [
         // {
@@ -64,7 +78,23 @@ class App extends React.Component<Props,State> {
       socketReadyState: 0,
     }
 
+    //The constructor is run twice in strict mode in development, but I don't want to set up these values yet
+    //https://reactjs.org/docs/strict-mode.html#detecting-unexpected-side-effects
+    //@ts-ignore
+    this.privateKeyJwk = null
+    //@ts-ignore
+    this.socket = null
+    //@ts-ignore
+    this.publicKeyJwk = null
+  }
+
+  componentDidMount() {
     this.socket = this.setUpSocket()
+    genKeys().then(({publicKeyJwk, privateKeyJwk}) => {
+      this.publicKeyJwk = publicKeyJwk
+      this.privateKeyJwk = privateKeyJwk
+      console.log(publicKeyJwk)
+    })
   }
 
   componentDidUpdate(prevProps:Props) {
@@ -87,6 +117,7 @@ class App extends React.Component<Props,State> {
     )
 
     socket.onopen = () => {
+      //TODO broadcast public key
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
       this.setState({socketReadyState: socket.readyState}) //mark the new socket state
       clearInterval(this.pingInterval) //clear the previous interval
@@ -117,7 +148,12 @@ class App extends React.Component<Props,State> {
 
   ping = () => this.socket.send("") //send empty string
 
-  addChatFromSocket = (content: string, senderAddr:string, type: string) => {
+  addChatFromSocket = (content: string | EncryptedMessageType, senderAddr:string, type: string) => {
+    //TODO check if this is
+    // - a public key broadcast, save the public key to the senderAddr
+    // - a plaintext broadcast
+    // - an encrypted message, decrypt, then save
+
     this.addChat(content, senderAddr, type) //add the chat to state
 
     this.setState({ //update the socket state
@@ -165,9 +201,22 @@ class App extends React.Component<Props,State> {
     e.preventDefault()
 
     const content = this.state.input.trim() //trim the input of any white space
-
     if(content) {
-      this.socket.send(content) //send the chat to the socket
+      let message = null
+      if(this.state.encrypt) { //if we want to encrypt
+        //TODO send multiple messages to all targets 
+        message = { //TODO encrypt the content here
+          plaintext: content,
+        }
+      }
+      else {
+        message = {
+          plaintext: content,
+        }
+      }
+
+      
+      this.socket.send(JSON.stringify(message)) //send the chat to the socket
 
       this.addChat(content, "self", "user") //add this chat to state
 

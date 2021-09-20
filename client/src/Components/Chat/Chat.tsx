@@ -12,6 +12,8 @@ export type ChatType = {
 interface State {}
 
 class Chat extends React.Component<ChatType,State> {
+  //TODO indicate whether this message was encrypted or not
+  
   showSenderAddr = () => {
     //if this message should show the sender address
     if(this.props.showSenderAddr) {

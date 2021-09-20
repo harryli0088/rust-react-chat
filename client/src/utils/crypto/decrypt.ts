@@ -30,7 +30,7 @@ export default async function decrypt(
    */
   const decryptedData = await window.crypto.subtle.decrypt(
     {
-      name: "AES-GCM", //TODO learn this
+      name: "AES-GCM",
       iv: strToArr(message.iv), //convert the iv string to an array
     },
     derivedKey,

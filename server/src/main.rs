@@ -45,7 +45,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
     /* SET UP THE WEBSOCKET CONNECTION */
 
-    //instead of routing, this server manages chat rooms usign the protocol argument specified from the client
+    //instead of routing, this server manages chat rooms using the protocol argument specified from the client
     //ie in JavaScript: new WebSocket("ws://localhost:8080", protocol)
     let mut protocol = HeaderValue::from_static("");
     let copy_headers_callback = |request: &Request, mut response: Response| -> Result<Response, ErrorResponse> {
@@ -129,8 +129,9 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         println!("Received a message from {}: {}", client_addr, msg.to_text().unwrap());
 
         //if this is not an empty ping message
-        //pings are required to keep AWS Elastic Beanstalk WebSocket connections open
+        //(pings are required to keep AWS Elastic Beanstalk WebSocket connections open)
         if msg.to_text().unwrap() != "" {
+            //TODO target the message if it is encrypted
             broadcast_to_other_clients(msg.to_text().unwrap().to_owned(), "user".to_owned());
         }
         // else {
