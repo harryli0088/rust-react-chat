@@ -17,6 +17,7 @@ $sidebar-width-tablet: 200px;
     border-right: 1px solid white;
     padding: 1em;
     position: relative;
+    overflow-y: auto;
 
     #github {
       position: absolute;
@@ -38,6 +39,11 @@ $sidebar-width-tablet: 200px;
         margin-bottom: 0.5em;
         display: block;
       }
+    }
+
+    #disclaimer {
+      padding: 0.5em;
+      background-color: #E74C3C;
     }
   }
 

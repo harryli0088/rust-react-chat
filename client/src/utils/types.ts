@@ -1,16 +1,14 @@
 import { EncryptedMessageType } from "./crypto/encrypt"
 
-export type PublicKeySendType = {
+export type PublicKeySendType = { //broadcast
   public_key: JsonWebKey
 }
 
-export type PlaintextSendType = {
+export type PlaintextSendType = { //broadcast
   plaintext: string
 }
 
-export type EncryptedSendType = {
-  cipher: string,
-  initialization_vector: string,
+export type EncryptedSendType = EncryptedMessageType & { //targeted send
   recv_addr: string,
 }
 

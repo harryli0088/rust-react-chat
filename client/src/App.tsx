@@ -303,6 +303,19 @@ class App extends React.Component<Props,State> {
 
           <hr/>
 
+          <h3>End-to-End Encryption Overview</h3>
+
+          <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encrypted systems.</p>
+
+          <p>Intro</p>
+          <p>Key Generation</p>
+          <p>Public Key Broadcasting</p>
+          <p>Encryption/Decryption</p>
+          <p>Message Integrity</p>
+          <p>Out-of-band Verification</p>
+
+          <hr/>
+
           <div>
 		          <p>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">Typescript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></p>
 		            <p><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></p>
