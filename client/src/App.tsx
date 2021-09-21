@@ -4,8 +4,9 @@ import github from "github.svg"
 import { withRouter, RouteComponentProps } from "react-router"
 import clientPackage from "../package.json"
 import 'App.scss'
-import { EncryptedMessageType } from 'utils/crypto/encrypt'
+import encrypt, { EncryptedMessageType } from 'utils/crypto/encrypt'
 import genKeys from 'utils/crypto/genKeys'
+import { EncryptedSendType, PlaintextSendType, PublicKeySendType } from 'utils/types'
 
 type Props = RouteComponentProps
 
@@ -109,6 +110,12 @@ class App extends React.Component<Props,State> {
     this.socket.close()
   }
 
+  send = (obj: Object) => {
+    this.socket.send(JSON.stringify(obj))
+  }
+
+  getPublicKeySend = ():PublicKeySendType => ({pk: this.publicKeyJwk})
+
   setUpSocket = () => {
     this.setState({socketReadyState: 0}) //mark that we are making a new WebSocket connection
     const socket = new WebSocket( //try connecting to the server
@@ -117,7 +124,8 @@ class App extends React.Component<Props,State> {
     )
 
     socket.onopen = () => {
-      //TODO broadcast public key
+      this.send(this.getPublicKeySend()) //broadcast the public key
+
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
       this.setState({socketReadyState: socket.readyState}) //mark the new socket state
       clearInterval(this.pingInterval) //clear the previous interval
@@ -200,25 +208,24 @@ class App extends React.Component<Props,State> {
   onChatTypeSubmit = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    const content = this.state.input.trim() //trim the input of any white space
-    if(content) {
-      let message = null
+    const input = this.state.input.trim() //trim the input of any white space
+    if(input) { //if there is input to send
       if(this.state.encrypt) { //if we want to encrypt
-        //TODO send multiple messages to all targets 
-        message = { //TODO encrypt the content here
-          plaintext: content,
-        }
+        Object.entries(this.keyMap).forEach(async ([senderAddr,keys]) => { //encrypt the message for all recipients
+          const message:EncryptedSendType = {
+            ...(await encrypt(input, keys.derived)), //encrypt the data
+            sender_addr: senderAddr //specify the intended recipient
+          }
+          this.send(message) //send the chat to the socket
+        })
       }
       else {
-        message = {
-          plaintext: content,
-        }
+        const message:PlaintextSendType = { p: input }
+        this.send(message) //send the chat to the socket
       }
 
-      
-      this.socket.send(JSON.stringify(message)) //send the chat to the socket
 
-      this.addChat(content, "self", "user") //add this chat to state
+      this.addChat(input, "self", "user") //add this chat to state
 
       this.setState({ input: "" }) //clear the input
     }
