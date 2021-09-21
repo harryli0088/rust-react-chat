@@ -1,35 +1,46 @@
+import { EncryptedMessageType } from "./crypto/encrypt"
+
 export type PublicKeySendType = {
-  pk: JsonWebKey
+  public_key: JsonWebKey
 }
 
 export type PlaintextSendType = {
-  p: string
+  plaintext: string
 }
 
 export type EncryptedSendType = {
-  c: string,
-  iv: string,
-  sender_addr: string,
+  cipher: string,
+  initialization_vector: string,
+  recv_addr: string,
 }
 
 
 export type RecvType = {
+  content: any,
   sender_addr: string,
+  type: string,
 }
 
 export type MetaRecvType = RecvType & {
-  s: number, //0 is client joined, 1 is client left
+  content: number, //0 is client joined, 1 is client left
+  type: "meta",
 }
 
 export type PublicKeyRecvType = RecvType & {
-  pk: JsonWebKey,
+  content: {
+    public_key: JsonWebKey,
+  },
+  type: "meta",
 }
 
 export type PlaintextRecvType = RecvType & {
-  p: string,
+  content: {
+    plaintext: string,
+  },
+  type: "meta",
 }
 
 export type EncryptedRecvType = RecvType & {
-  c: string,
-  iv: string,
+  content: EncryptedMessageType,
+  type: "meta",
 }

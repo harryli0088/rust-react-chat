@@ -29,9 +29,9 @@ test("decrypt detects tampering", async () => {
 
 
   //TAMPER with first character
-  const arr = strToArr(encryptResult.c)
+  const arr = strToArr(encryptResult.cipher)
   arr[0] += 1
-  encryptResult.c = arrToStr(arr)
+  encryptResult.cipher = arrToStr(arr)
 
   try {
     await decrypt(encryptResult, derivedKey)

@@ -13,7 +13,7 @@ test("encrypt", async () => {
   const plaintext = "my plaintext message"
   const result = await encrypt(plaintext, derivedKey)
 
-  expect(atob(result.c)).not.toEqual(plaintext)
+  expect(atob(result.cipher)).not.toEqual(plaintext)
   expect(validate(result,ENCRYPT_SCHEMA).errors).toEqual([])
 })
 
@@ -21,8 +21,8 @@ export const ENCRYPT_SCHEMA = {
   "id": "/EncryptSchema",
   "type": "object",
   "properties": {
-    "c": { "type": "string", maxLength: 48, minLength: 48 },
-    "iv": { "type": "string", maxLength: 12, minLength: 12 },
+    "cipher": { "type": "string", maxLength: 48, minLength: 48 },
+    "initialization_vector": { "type": "string", maxLength: 12, minLength: 12 },
   },
-  "required": ["c","iv"]
+  "required": ["cipher","initialization_vector"]
 }

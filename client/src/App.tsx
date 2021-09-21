@@ -114,7 +114,7 @@ class App extends React.Component<Props,State> {
     this.socket.send(JSON.stringify(obj))
   }
 
-  getPublicKeySend = ():PublicKeySendType => ({pk: this.publicKeyJwk})
+  getPublicKeySend = ():PublicKeySendType => ({public_key: this.publicKeyJwk})
 
   setUpSocket = () => {
     this.setState({socketReadyState: 0}) //mark that we are making a new WebSocket connection
@@ -212,16 +212,16 @@ class App extends React.Component<Props,State> {
     if(input) { //if there is input to send
       if(this.state.encrypt) { //if we want to encrypt
         Object.entries(this.keyMap).forEach(async ([senderAddr,keys]) => { //encrypt the message for all recipients
-          const message:EncryptedSendType = {
+          const content:EncryptedSendType = {
             ...(await encrypt(input, keys.derived)), //encrypt the data
-            sender_addr: senderAddr //specify the intended recipient
+            recv_addr: senderAddr //specify the intended recipient
           }
-          this.send(message) //send the chat to the socket
+          this.send(content) //send the chat to the socket
         })
       }
       else {
-        const message:PlaintextSendType = { p: input }
-        this.send(message) //send the chat to the socket
+        const content:PlaintextSendType = { plaintext: input }
+        this.send(content) //send the chat to the socket
       }
 
 

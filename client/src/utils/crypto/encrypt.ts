@@ -1,8 +1,8 @@
 import arrToStr from "utils/arrToStr"
 
 export type EncryptedMessageType = {
-  c: string,    //cipher
-  iv: string,   //initialization vector
+  cipher: string,
+  initialization_vector: string,
 }
 
 /**
@@ -34,7 +34,7 @@ export default async function encrypt(
   const cipherStr = arrToStr(new Uint8Array(encryptedData))
 
   return {
-    c: btoa(cipherStr), //cipher, TODO need btoa?
-    iv: arrToStr(initializationVector) //convert the initialization vector to a string
+    cipher: btoa(cipherStr), //TODO need btoa?
+    initialization_vector: arrToStr(initializationVector) //convert the initialization vector to a string
   }
 }

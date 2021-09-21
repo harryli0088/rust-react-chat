@@ -12,7 +12,7 @@ export default async function decrypt(
   message: EncryptedMessageType,
   derivedKey: CryptoKey
 ) {
-  const cipherStrArray = strToArr(atob(message.c)) //TODO need atob?
+  const cipherStrArray = strToArr(atob(message.cipher)) //TODO need atob?
 
   /**
    * AES-GCM validates the integrity of the plaintext and IV without needing a Message Authentication Code
@@ -31,7 +31,7 @@ export default async function decrypt(
   const decryptedData = await window.crypto.subtle.decrypt(
     {
       name: "AES-GCM",
-      iv: strToArr(message.iv), //convert the iv string to an array
+      iv: strToArr(message.initialization_vector), //convert the iv string to an array
     },
     derivedKey,
     cipherStrArray
