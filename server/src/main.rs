@@ -35,7 +35,7 @@ type PeerMap = Arc<Mutex<HashMap<SocketAddr, PeerStruct>>>;
 
 
 /* MESSAGE STRUCTS */
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct JsonWebKey {
   crv: String,
   ext: bool,
@@ -45,7 +45,7 @@ struct JsonWebKey {
   y: String
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct EncryptedRecvStruct { //targeted send
   cipher: String,
   initialization_vector: String,
@@ -69,8 +69,13 @@ struct EncryptedRecvStruct { //targeted send
 
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 enum BroadcastRecvEnum {
+  EncryptedRecvType {
+    cipher: String,
+    initialization_vector: String,
+    recv_addr: SocketAddr,
+  },
   MetaPreStruct {
     meta: u8, //0 is client joined, 1 is client left
   },
@@ -82,34 +87,14 @@ enum BroadcastRecvEnum {
   },
 }
 
-#[derive(Serialize, Deserialize)]
-struct EncryptedSendType {
-  cipher: String,
-  initialization_vector: String,
-  sender_addr: SocketAddr,
-}
-
-// #[derive(Serialize, Deserialize)]
-// struct MetaSendStruct {
-//   meta: u8, //0 is client joined, 1 is client left
-//   sender_addr: SocketAddr,
-// }
-
-// #[derive(Serialize, Deserialize)]
-// struct PlaintextSendStruct {
-//   plaintext: String,
-//   sender_addr: SocketAddr,
-// }
-
-// #[derive(Serialize, Deserialize)]
-// struct PublicKeySendStruct {
-//   public_key: JsonWebKey,
-//   sender_addr: SocketAddr,
-// }
-
-
-#[derive(Serialize, Deserialize)]
+// #[derive(Copy, Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 enum BroadcastSendEnum {
+  EncryptedSendType {
+    cipher: String,
+    initialization_vector: String,
+    sender_addr: SocketAddr,
+  },
   MetaSendStruct {
     meta: u8, //0 is client joined, 1 is client left
     sender_addr: SocketAddr,
@@ -167,12 +152,19 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
 
     //this function is used to broadcast a message and type to all the other connected clients
-    let broadcast_to_other_clients = |recv: BroadcastRecvEnum| {
+    let send_message = |recv: BroadcastRecvEnum| {
         let peers = peer_map.lock().unwrap();
         let sender_addr = client_addr.to_owned();
 
+        let testing = recv.clone(); //avoid "value borrowed here after partial move" errors
+
         //make a new struct to be serialized
-        let broadcast_data:BroadcastSendEnum = match recv {
+        let message:BroadcastSendEnum = match recv {
+          BroadcastRecvEnum::EncryptedRecvType { cipher, initialization_vector, recv_addr: _ } => BroadcastSendEnum::EncryptedSendType {
+            cipher,
+            initialization_vector,
+            sender_addr
+          },
           BroadcastRecvEnum::MetaPreStruct { meta } => BroadcastSendEnum::MetaSendStruct {
             meta,
             sender_addr
@@ -188,9 +180,14 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         };
 
         let send = Message::Text(
-            serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
+            serde_json::to_string(&message).expect("problem serializing message")
         );
         println!("New message {}", send.to_text().unwrap());
+
+        let test:Option<SocketAddr> = match testing {
+          BroadcastRecvEnum::EncryptedRecvType { cipher: _, initialization_vector: _, recv_addr } => Some(recv_addr),
+          _ => None
+        };
 
         //filter addresses that aren't the message sender's address AND are using the same protocol
         let broadcast_recipients = peers.iter().filter(
@@ -199,6 +196,12 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
             && ( //this client's protocol is the same as this sender's
                 peers.get(peer_addr).expect("peer_addr should be a key in the HashMap").protocol.to_str().expect("expected a string")
                 == protocol.to_str().expect("expected a string")
+            )
+            && ( //the client is the intended receiver of the encrypted message
+              match test {
+                Some(recv_addr) => &&recv_addr == peer_addr,
+                None => true
+              }
             )
         ).map(|(_, ws_sink)| ws_sink);
 
@@ -214,7 +217,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     /* SUCCESSFULL CONNECTED */
 
     //tell everyone we've connected
-    broadcast_to_other_clients(BroadcastRecvEnum::MetaPreStruct { meta: 0 });
+    send_message(BroadcastRecvEnum::MetaPreStruct { meta: 0 });
 
 
 
@@ -231,7 +234,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         //(pings are required to keep AWS Elastic Beanstalk WebSocket connections open)
         if msg.to_text().unwrap() != "" {
             let recv = serde_json::from_str(msg.to_text().unwrap()).unwrap();
-            broadcast_to_other_clients(recv);
+            send_message(recv);
         }
         // else {
         //     println!("PING")
@@ -250,7 +253,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     /* DISCONNECTING */
 
     //tell everyone we're disconnecting
-    broadcast_to_other_clients(BroadcastRecvEnum::MetaPreStruct { meta: 1 });
+    send_message(BroadcastRecvEnum::MetaPreStruct { meta: 1 });
 
     //remove this client from the peer map
     let mut peers_disconnect = peer_map.lock().unwrap();
