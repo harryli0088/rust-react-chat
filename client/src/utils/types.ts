@@ -14,31 +14,19 @@ export type EncryptedSendType = EncryptedMessageType & { //targeted send
 
 
 export type RecvType = {
-  content: any,
   sender_addr: string,
-  type: string,
 }
 
 export type MetaRecvType = RecvType & {
-  content: number, //0 is client joined, 1 is client left
-  type: "meta",
+  meta: number, //0 is client joined, 1 is client left
 }
 
 export type PublicKeyRecvType = RecvType & {
-  content: {
-    public_key: JsonWebKey,
-  },
-  type: "meta",
+  public_key: JsonWebKey,
 }
 
 export type PlaintextRecvType = RecvType & {
-  content: {
-    plaintext: string,
-  },
-  type: "meta",
+  plaintext: string,
 }
 
-export type EncryptedRecvType = RecvType & {
-  content: EncryptedMessageType,
-  type: "meta",
-}
+export type EncryptedRecvType = RecvType & EncryptedMessageType

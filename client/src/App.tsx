@@ -91,11 +91,6 @@ class App extends React.Component<Props,State> {
 
   componentDidMount() {
     this.socket = this.setUpSocket()
-    genKeys().then(({publicKeyJwk, privateKeyJwk}) => {
-      this.publicKeyJwk = publicKeyJwk
-      this.privateKeyJwk = privateKeyJwk
-      console.log(publicKeyJwk)
-    })
   }
 
   componentDidUpdate(prevProps:Props) {
@@ -124,7 +119,13 @@ class App extends React.Component<Props,State> {
     )
 
     socket.onopen = () => {
-      this.send(this.getPublicKeySend()) //broadcast the public key
+      genKeys().then(({publicKeyJwk, privateKeyJwk}) => {
+        this.publicKeyJwk = publicKeyJwk
+        this.privateKeyJwk = privateKeyJwk
+        console.log(publicKeyJwk)
+        this.send(this.getPublicKeySend()) //broadcast the public key
+      })
+      
 
       this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
       this.setState({socketReadyState: socket.readyState}) //mark the new socket state

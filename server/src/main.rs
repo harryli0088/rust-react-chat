@@ -6,19 +6,23 @@ use std::{
     io::Error as IoError,
     net::SocketAddr,
     sync::{Arc, Mutex},
+    vec::Vec
 };
 
 use futures_channel::mpsc::{unbounded, UnboundedSender};
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
 
+use http::header::{
+  HeaderValue,
+  SEC_WEBSOCKET_PROTOCOL,
+};
+
+use serde::{Deserialize, Serialize};
+
 use tokio::net::{TcpListener, TcpStream};
 use tungstenite::{
     protocol::Message,
     handshake::server::{Request, Response, ErrorResponse},
-};
-use http::header::{
-    HeaderValue,
-    SEC_WEBSOCKET_PROTOCOL,
 };
 
 type Sender = UnboundedSender<Message>;
@@ -29,15 +33,99 @@ struct PeerStruct {
 
 type PeerMap = Arc<Mutex<HashMap<SocketAddr, PeerStruct>>>;
 
-use serde::{Deserialize, Serialize};
 
+/* MESSAGE STRUCTS */
 #[derive(Serialize, Deserialize)]
-struct BroadcastJsonStruct {
-    message: String,
-    sender_addr: SocketAddr,
-    type_key: String,
+struct JsonWebKey {
+  crv: String,
+  ext: bool,
+  key_ops:Vec<String>,
+  kty: String,
+  x: String,
+  y: String
 }
 
+#[derive(Serialize, Deserialize)]
+struct EncryptedRecvStruct { //targeted send
+  cipher: String,
+  initialization_vector: String,
+  recv_addr: String,
+}
+
+// #[derive(Serialize, Deserialize)]
+// struct MetaPreStruct {
+//   meta: u8, //0 is client joined, 1 is client left
+// }
+// #[derive(Serialize, Deserialize)]
+// struct PublicKeyRecvStruct { //broadcast
+//   public_key: JsonWebKey
+// }
+
+// #[derive(Serialize, Deserialize)]
+// struct PlaintextRecvStruct { //broadcast
+//   plaintext: String
+// }
+
+
+
+
+#[derive(Serialize, Deserialize)]
+enum BroadcastRecvEnum {
+  MetaPreStruct {
+    meta: u8, //0 is client joined, 1 is client left
+  },
+  PlaintextRecvStruct { //broadcast
+    plaintext: String
+  },
+  PublicKeyRecvStruct { //broadcast
+    public_key: JsonWebKey
+  },
+}
+
+#[derive(Serialize, Deserialize)]
+struct EncryptedSendType {
+  cipher: String,
+  initialization_vector: String,
+  sender_addr: SocketAddr,
+}
+
+// #[derive(Serialize, Deserialize)]
+// struct MetaSendStruct {
+//   meta: u8, //0 is client joined, 1 is client left
+//   sender_addr: SocketAddr,
+// }
+
+// #[derive(Serialize, Deserialize)]
+// struct PlaintextSendStruct {
+//   plaintext: String,
+//   sender_addr: SocketAddr,
+// }
+
+// #[derive(Serialize, Deserialize)]
+// struct PublicKeySendStruct {
+//   public_key: JsonWebKey,
+//   sender_addr: SocketAddr,
+// }
+
+
+#[derive(Serialize, Deserialize)]
+enum BroadcastSendEnum {
+  MetaSendStruct {
+    meta: u8, //0 is client joined, 1 is client left
+    sender_addr: SocketAddr,
+  },
+  PlaintextSendStruct {
+    plaintext: String,
+    sender_addr: SocketAddr,
+  },
+  PublicKeySendStruct {
+    public_key: JsonWebKey,
+    sender_addr: SocketAddr,
+  },
+}
+
+
+/****************************************************/
 
 async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr: SocketAddr) {
     println!("Incoming TCP connection from: {}, raw stream: {}", client_addr, raw_stream.local_addr().unwrap());
@@ -79,19 +167,30 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
 
     //this function is used to broadcast a message and type to all the other connected clients
-    let broadcast_to_other_clients = |message:String, type_key: String| {
+    let broadcast_to_other_clients = |recv: BroadcastRecvEnum| {
         let peers = peer_map.lock().unwrap();
+        let sender_addr = client_addr.to_owned();
 
         //make a new struct to be serialized
-        let broadcast_data = BroadcastJsonStruct {
-            message,
-            sender_addr: client_addr.to_owned(),
-            type_key,
+        let broadcast_data:BroadcastSendEnum = match recv {
+          BroadcastRecvEnum::MetaPreStruct { meta } => BroadcastSendEnum::MetaSendStruct {
+            meta,
+            sender_addr
+          },
+          BroadcastRecvEnum::PlaintextRecvStruct { plaintext } => BroadcastSendEnum::PlaintextSendStruct {
+            plaintext,
+            sender_addr
+          },
+          BroadcastRecvEnum::PublicKeyRecvStruct { public_key } => BroadcastSendEnum::PublicKeySendStruct {
+            public_key,
+            sender_addr
+          },
         };
-        let new_msg = Message::Text(
+
+        let send = Message::Text(
             serde_json::to_string(&broadcast_data).expect("problem serializing broadcast_data")
         );
-        println!("New message {}", new_msg.to_text().unwrap());
+        println!("New message {}", send.to_text().unwrap());
 
         //filter addresses that aren't the message sender's address AND are using the same protocol
         let broadcast_recipients = peers.iter().filter(
@@ -105,7 +204,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
         //send the message to all the recipients
         for recp in broadcast_recipients {
-            recp.sender.unbounded_send(new_msg.clone()).unwrap();
+            recp.sender.unbounded_send(send.clone()).unwrap();
         }
     };
 
@@ -115,7 +214,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     /* SUCCESSFULL CONNECTED */
 
     //tell everyone we've connected
-    broadcast_to_other_clients(format!("{} has connected", client_addr.to_owned()).to_owned(), "meta".to_owned());
+    broadcast_to_other_clients(BroadcastRecvEnum::MetaPreStruct { meta: 0 });
 
 
 
@@ -131,8 +230,8 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
         //if this is not an empty ping message
         //(pings are required to keep AWS Elastic Beanstalk WebSocket connections open)
         if msg.to_text().unwrap() != "" {
-            //TODO target the message if it is encrypted
-            broadcast_to_other_clients(msg.to_text().unwrap().to_owned(), "user".to_owned());
+            let recv = serde_json::from_str(msg.to_text().unwrap()).unwrap();
+            broadcast_to_other_clients(recv);
         }
         // else {
         //     println!("PING")
@@ -151,7 +250,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
     /* DISCONNECTING */
 
     //tell everyone we're disconnecting
-    broadcast_to_other_clients(format!("{} has disconnected", client_addr.to_owned()).to_owned(), "meta".to_owned());
+    broadcast_to_other_clients(BroadcastRecvEnum::MetaPreStruct { meta: 1 });
 
     //remove this client from the peer map
     let mut peers_disconnect = peer_map.lock().unwrap();
