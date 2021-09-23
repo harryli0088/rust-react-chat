@@ -20,17 +20,6 @@ $sidebar-width-tablet: 300px;
       position: relative;
       overflow-y: auto;
   
-      #github {
-        position: absolute;
-        top: 1em;
-        right: 1em;
-        transition: 0.5s;
-  
-        &:hover {
-          transform: scale(1.25);
-        }
-      }
-  
       h2 {
         margin-top: 0;
       }
@@ -126,7 +115,19 @@ $sidebar-width-tablet: 300px;
     }
   }
 
-  
+  #description {
+    border-top: 1px solid white;
+    background-color: #555;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+
+  footer {
+    background-color: #222;
+    border-top: 1px solid white;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
 
   .blob {
     padding-top: 0.25em;
@@ -147,20 +148,6 @@ $sidebar-width-tablet: 300px;
     }
   }
 
-  #description {
-    border-top: 1px solid white;
-    background-color: #555;
-    padding-top: 1em;
-    padding-bottom: 1em;
-  }
-
-  footer {
-    background-color: #222;
-    border-top: 1px solid white;
-    padding-top: 1em;
-    padding-bottom: 1em;
-  }
-
   .container {
     padding-left: 1em;
     padding-right: 1em;
@@ -173,6 +160,16 @@ $sidebar-width-tablet: 300px;
     @media only screen and (min-width: 1000px) {
       padding-left: calc(50vw - 400px);
       padding-right: calc(50vw - 400px);
+    }
+  }
+
+  .svg-inline--fa {
+    transition: 0.5s;
+    cursor: pointer;
+    color: white;
+
+    &:hover {
+      transform: scale(1.2);
     }
   }
 }

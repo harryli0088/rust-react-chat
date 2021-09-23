@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react'
+import { faEye, faEyeSlash, faKey } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+
 import RenderKey from 'Components/RenderKey/RenderKey'
 
 import { SenderDataType } from 'utils/types'
 
 import "./displaySender.scss"
+
 
 type Props = SenderDataType & {
   senderAddr: string,
@@ -17,6 +21,7 @@ const DisplaySender = (props: Props) => {
   } = props
 
   const [derivedKeyExported, setDerivedKeyExported] = useState<JsonWebKey | null>(null)
+  const [showDerivedKey, setShowDerivedKey] = useState<Boolean>(false)
 
   useEffect(() => {
     window.crypto.subtle.exportKey("jwk",derivedKey).then(jsonWebKey => {
@@ -30,15 +35,15 @@ const DisplaySender = (props: Props) => {
 
       <hr/>
 
-      <div>Public Key:</div>
+      <div>Public Key <FontAwesomeIcon icon={faKey}/></div>
       <RenderKey jsonWebKey={publicKeyJwk}/>
 
       {
         derivedKeyExported && (
           <React.Fragment>
             <br/>
-            <div>Derived Key:</div>
-            <RenderKey jsonWebKey={derivedKeyExported}/>
+            <div>Derived Key <FontAwesomeIcon icon={showDerivedKey ? faEye : faEyeSlash} onClick={() => setShowDerivedKey(!showDerivedKey)}/></div>
+            {showDerivedKey && <RenderKey jsonWebKey={derivedKeyExported}/>}
           </React.Fragment>
         )
       }

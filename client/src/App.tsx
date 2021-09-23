@@ -1,5 +1,8 @@
 import React from 'react'
 import { withRouter, RouteComponentProps } from "react-router"
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faDoorOpen, faKey, faLock } from '@fortawesome/free-solid-svg-icons'
+import { faGithub, faRust } from '@fortawesome/free-brands-svg-icons'
 
 import clientPackage from "../package.json"
 import encrypt from 'utils/crypto/encrypt'
@@ -18,11 +21,10 @@ import deriveKey from 'utils/crypto/deriveKey'
 import decrypt from 'utils/crypto/decrypt'
 
 import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
-
-import github from "github.svg"
-import 'App.scss'
 import DisplaySender from 'Components/DisplaySender/DisplaySender'
 import RenderKey from 'Components/RenderKey/RenderKey'
+
+import 'App.scss'
 
 type Props = RouteComponentProps
 
@@ -350,9 +352,12 @@ class App extends React.Component<Props,State> {
           </div>
 
           <div id="sidebar">
-            <a id="github" href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer"><img src={github} alt="github repo"/></a>
-
-            <h2>End-to-End Encrypted React - Rust Chat App</h2>
+            <h2>
+              End-to-End Encrypted React - Rust Chat App &nbsp;
+              <a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">
+                <FontAwesomeIcon icon={faGithub} />
+              </a>
+            </h2>
             <p>Version {clientPackage.version}</p>
             <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
             <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
@@ -361,8 +366,7 @@ class App extends React.Component<Props,State> {
             <hr/>
 
             <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
-              <br/>
-              <label htmlFor="new-room-input">Change Rooms:</label>
+              <h3><label htmlFor="new-room-input">Change Rooms:</label></h3>
               <div>
                 <input
                   id="new-room-input"
@@ -371,7 +375,7 @@ class App extends React.Component<Props,State> {
                   value={this.state.newRoom}
                 />&nbsp;
 
-                <button type="submit">Change</button>
+                <button type="submit">Change <FontAwesomeIcon icon={faDoorOpen}/></button>
               </div>
               <br/>
             </form>
@@ -381,7 +385,7 @@ class App extends React.Component<Props,State> {
             {
               this.publicKeyJwk && (
                 <React.Fragment>
-                  <h3>Your Public Key</h3>
+                  <h3>Your Public Key <FontAwesomeIcon icon={faKey}/></h3>
                   <RenderKey jsonWebKey={this.publicKeyJwk}/>
 
                   <hr/>
@@ -405,7 +409,7 @@ class App extends React.Component<Props,State> {
         </div>
 
         <div id="description" className="container">
-          <h3>Rust Overview</h3>
+          <h3>Rust Overview <FontAwesomeIcon icon={faRust}/></h3>
           <p>The Rust server features include:</p>
           <ul>
             <li>WebSocket server</li>
@@ -416,7 +420,7 @@ class App extends React.Component<Props,State> {
 
           <hr/>
 
-          <h3>End-to-End Encryption Overview</h3>
+          <h3>End-to-End Encryption Overview <FontAwesomeIcon icon={faLock}/></h3>
 
           <p>Intro</p>
           <p>Key Generation</p>
