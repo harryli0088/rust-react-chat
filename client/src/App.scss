@@ -3,125 +3,130 @@ $sidebar-width-tablet: 300px;
 
 #App {
   background-color: #333;
-  height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
   color: white;
   letter-spacing: 1px;
-
-  display: flex;
-  flex-direction: row-reverse;
-
-  #sidebar {
-    width: $sidebar-width;
-    border-right: 1px solid white;
-    padding: 1em;
-    position: relative;
-    overflow-y: auto;
-
-    #github {
-      position: absolute;
-      top: 1em;
-      right: 1em;
-      transition: 0.5s;
-
-      &:hover {
-        transform: scale(1.25);
-      }
-    }
-
-    h2 {
-      margin-top: 0;
-    }
-
-    #new-room-form {
-      label {
-        margin-bottom: 0.5em;
-        display: block;
-      }
-    }
-
-    #disclaimer {
-      padding: 0.5em;
-      background-color: #E74C3C;
-      border-left: 3px solid #A93226;
-    }
-  }
-
-  #content {
-    text-align: center;
-    width: calc(100% - #{$sidebar-width});
-    background-color: #555;
-    display: flex;
-    flex-direction: column;
-    justify-content: stretch;
+  
+  #main {
     height: 100vh;
+    overflow-x: hidden;
 
-    #header {
-      padding-top: 0.5em;
-      padding-bottom: 1em;
-      font-weight: bold;
-      background-color: #333;
-    }
+    display: flex;
+    flex-direction: row-reverse;
 
-    #chat-container {
-      overflow-y: auto;
-      border-top: 1px solid white;
-      border-bottom: 1px solid white;
-      height: 100%;
-      display: flex;
-      flex-direction: column-reverse;
-    }
-
-    #chat-form-container {
+    #sidebar {
+      width: $sidebar-width;
+      border-right: 1px solid white;
+      padding: 1em;
       position: relative;
-      background-color: #333;
-      height: 4em;
-
-      #chat-form {
+      overflow-y: auto;
+  
+      #github {
         position: absolute;
-        bottom: 0.6em;
-        left: 0;
-        right: 0;
-
-        button {
-          width: 4em;
-          border-top-left-radius: 0;
-          border-bottom-left-radius: 0;
-          background-color: #17A589;
+        top: 1em;
+        right: 1em;
+        transition: 0.5s;
+  
+        &:hover {
+          transform: scale(1.25);
         }
-
-        input {
-          width: calc(100% - 7em);
-          border-top-right-radius: 0;
-          border-bottom-right-radius: 0;
+      }
+  
+      h2 {
+        margin-top: 0;
+      }
+  
+      #new-room-form {
+        label {
+          margin-bottom: 0.5em;
+          display: block;
         }
+      }
+  
+      #disclaimer {
+        padding: 0.5em;
+        background-color: #E74C3C;
+        border-left: 3px solid #A93226;
+      }
+    }
+  
+    #content {
+      text-align: center;
+      width: calc(100% - #{$sidebar-width});
+      background-color: #555;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      height: 100vh;
+  
+      #header {
+        padding: 1em;
+        padding-top: 0.5em;
+        font-weight: bold;
+        background-color: #333;
+      }
+  
+      #chat-container {
+        overflow-y: auto;
+        border-top: 1px solid white;
+        border-bottom: 1px solid white;
+        height: 100%;
+        display: flex;
+        flex-direction: column-reverse;
+      }
+  
+      #chat-form-container {
+        position: relative;
+        background-color: #333;
+        height: 4em;
+  
+        #chat-form {
+          position: absolute;
+          bottom: 0.6em;
+          left: 0;
+          right: 0;
+  
+          button {
+            width: 4em;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            background-color: #17A589;
+          }
+  
+          input {
+            width: calc(100% - 7em);
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+          }
+        }
+      }
+    }
+  
+    @media only screen and (max-width: 800px) {
+      #sidebar {
+        width: $sidebar-width-tablet;
+      }
+  
+      #content {
+        width: calc(100% - #{$sidebar-width-tablet});
+      }
+    }
+  
+    @media only screen and (max-width: 600px) {
+      flex-direction: column;
+      height: auto;
+  
+      #sidebar, #content {
+        width: auto;
+      }
+  
+      #sidebar {
+        border-top: 1px solid white;
+        border-right: none;
       }
     }
   }
 
-  @media only screen and (max-width: 800px) {
-    #sidebar {
-      width: $sidebar-width-tablet;
-    }
-
-    #content {
-      width: calc(100% - #{$sidebar-width-tablet});
-    }
-  }
-
-  @media only screen and (max-width: 600px) {
-    flex-direction: column;
-
-    #sidebar, #content {
-      width: auto;
-    }
-
-    #sidebar {
-      border-top: 1px solid white;
-      border-right: none;
-    }
-  }
+  
 
   .blob {
     padding-top: 0.25em;
@@ -141,19 +146,33 @@ $sidebar-width-tablet: 300px;
       background: #E74C3C;
     }
   }
-}
 
-.container {
-  padding-left: 1em;
-  padding-right: 1em;
+  #description {
+    border-top: 1px solid white;
+    background-color: #555;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
 
-  // @media only screen and (min-width: 600px) {
-  //   padding-left: 5vw;
-  //   padding-right: 5vw;
-  // }
-  //
-  // @media only screen and (min-width: 1000px) {
-  //   padding-left: calc(50vw - 400px);
-  //   padding-right: calc(50vw - 400px);
-  // }
+  footer {
+    background-color: #222;
+    border-top: 1px solid white;
+    padding-top: 1em;
+    padding-bottom: 1em;
+  }
+
+  .container {
+    padding-left: 1em;
+    padding-right: 1em;
+  
+    @media only screen and (min-width: 600px) {
+      padding-left: 5vw;
+      padding-right: 5vw;
+    }
+    
+    @media only screen and (min-width: 1000px) {
+      padding-left: calc(50vw - 400px);
+      padding-right: calc(50vw - 400px);
+    }
+  }
 }

@@ -22,6 +22,7 @@ import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
 import github from "github.svg"
 import 'App.scss'
 import DisplaySender from 'Components/DisplaySender/DisplaySender'
+import RenderKey from 'Components/RenderKey/RenderKey'
 
 type Props = RouteComponentProps
 
@@ -140,6 +141,7 @@ class App extends React.Component<Props,State> {
         this.send(this.getPublicKeySend()) //broadcast the public key
 
         this.publicKeyQueue.forEach(this.processPublicKey) //process any outstanding public keys
+        this.forceUpdate()
       })
       
 
@@ -316,78 +318,93 @@ class App extends React.Component<Props,State> {
     
     const senderDataEntries = Object.entries(this.senderData)
 
+    console.log("publicKeyJwk",this.publicKeyJwk)
+
     return (
       <div id="App">
-        <div id="content">
-          <div id="header" className="container">
-            Current Room: <span  className="blob">{this.props.location.pathname}</span> <span className={`blob  ${connectionStatus}`}>{connectionStatus}</span>
-          </div>
+        <div id="main">
+          <div id="content">
+            <div id="header">
+              Current Room: <span  className="blob">{this.props.location.pathname}</span> <span className={`blob  ${connectionStatus}`}>{connectionStatus}</span>
+            </div>
 
-          <div id="chat-container" className="container">
-            <div>
-              {this.state.chats.map((m,i) =>
-                <Chat key={i} {...m}/>
-              )}
+            <div id="chat-container" className="container">
+              <div>
+                {this.state.chats.map((m,i) =>
+                  <Chat key={i} {...m}/>
+                )}
+              </div>
+            </div>
+
+            <div id="chat-form-container">
+              <form id="chat-form" onSubmit={this.onChatTypeSubmit}>
+                <input
+                  autoFocus
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}
+                  value={this.state.input}
+                />
+
+                <button type="submit" disabled={this.state.socketReadyState !== 1}>Send</button>
+              </form>
             </div>
           </div>
 
-          <div id="chat-form-container">
-            <form id="chat-form" onSubmit={this.onChatTypeSubmit}>
-              <input
-                autoFocus
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}
-                value={this.state.input}
-              />
+          <div id="sidebar">
+            <a id="github" href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer"><img src={github} alt="github repo"/></a>
 
-              <button type="submit" disabled={this.state.socketReadyState !== 1}>Send</button>
+            <h2>End-to-End Encrypted React - Rust Chat App</h2>
+            <p>Version {clientPackage.version}</p>
+            <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
+            <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
+            <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
+            
+            <hr/>
+
+            <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
+              <br/>
+              <label htmlFor="new-room-input">Change Rooms:</label>
+              <div>
+                <input
+                  id="new-room-input"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
+                  placeholder="Enter a new room code"
+                  value={this.state.newRoom}
+                />&nbsp;
+
+                <button type="submit">Change</button>
+              </div>
+              <br/>
             </form>
+
+            <hr/>
+
+            {
+              this.publicKeyJwk && (
+                <React.Fragment>
+                  <h3>Your Public Key</h3>
+                  <RenderKey jsonWebKey={this.publicKeyJwk}/>
+
+                  <hr/>
+                </React.Fragment>
+              )
+            }
+
+            <div>
+              <h3>Connected Clients</h3>
+              
+              {
+                senderDataEntries.length > 0
+                ? (
+                  senderDataEntries.map(([senderAddr, {publicKeyJwk, derivedKey}]) =>
+                    <DisplaySender key={senderAddr} derivedKey={derivedKey} publicKeyJwk={publicKeyJwk} senderAddr={senderAddr}/>
+                  )
+                ) : <div>There are no other connected clients</div>
+              }
+            </div>
           </div>
         </div>
 
-        <div id="sidebar">
-          <a id="github" href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer"><img src={github} alt="github repo"/></a>
-
-          <h2>End-to-End Encrypted React - Rust Chat App</h2>
-          <p>Version {clientPackage.version}</p>
-          <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
-          <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
-          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
-          
-          <hr/>
-
-          <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
-            <br/>
-            <label htmlFor="new-room-input">Change Rooms:</label>
-            <div>
-              <input
-                id="new-room-input"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
-                placeholder="Enter a new room code"
-                value={this.state.newRoom}
-              />&nbsp;
-
-              <button type="submit">Change</button>
-            </div>
-            <br/>
-          </form>
-
-          <hr/>
-
-          <div>
-            <h3>Connected Clients</h3>
-            
-            {
-              senderDataEntries.length > 0
-              ? (
-                senderDataEntries.map(([senderAddr, {publicKeyJwk, derivedKey}]) =>
-                  <DisplaySender key={senderAddr} derivedKey={derivedKey} publicKeyJwk={publicKeyJwk} senderAddr={senderAddr}/>
-                )
-              ) : <div>There are no other connected clients</div>
-            }
-          </div>
-
-          <hr/>
-
+        <div id="description" className="container">
           <h3>Rust Overview</h3>
           <p>The Rust server features include:</p>
           <ul>
@@ -401,21 +418,20 @@ class App extends React.Component<Props,State> {
 
           <h3>End-to-End Encryption Overview</h3>
 
-
           <p>Intro</p>
           <p>Key Generation</p>
           <p>Public Key Broadcasting</p>
           <p>Encryption/Decryption</p>
           <p>Message Integrity</p>
-          <p>Out-of-band Verification</p>
-
-          <hr/>
-
-          <div>
-		          <p>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">Typescript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></p>
-		          <p><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></p>
-          </div>
+          <p>Out-of-Band Verification</p>
+          <p>How do you know that the server isn't faking the public keys? It's possible for a malicious server Eve to break the encryption by simply generating its own keys and intercepting mesages. When Alice sends her public key to Bob, Eve stores it, but then sends Eve's public key to Bob, pretending that it's Alice's. In the same way, Eve takes Bob's public key, but sends Eve's public key to Alice. In this way, Eve can intercept a message from Alice, decrypt it, then re-encrypt it to send to Bob. Alice and Bob would be none the wiser. It is therefore critical to validate public keys. The only way to do this is via out-of-band verification. Alice and Bob need to communicate in some way outside this app and verify each other's keys. Signal implements this with safety numbers <a href="https://support.signal.org/hc/en-us/articles/360007060632-What-is-a-safety-number-and-why-do-I-see-that-it-changed-" target="_blank" rel="noopener noreferrer">safety numbers</a>. <a href="https://ssd.eff.org/en/module/key-verification" target="_blank" rel="noopener noreferrer">Read more</a>.</p>
         </div>
+
+        <footer className="container">
+          <div>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">Typescript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></div>
+          <br/>
+          <div><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></div>
+        </footer>
       </div>
     );
   }

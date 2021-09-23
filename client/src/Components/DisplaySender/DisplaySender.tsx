@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import RenderKey from 'Components/RenderKey/RenderKey'
 
 import { SenderDataType } from 'utils/types'
 
@@ -30,14 +31,14 @@ const DisplaySender = (props: Props) => {
       <hr/>
 
       <div>Public Key:</div>
-      <div className="formatKey"><pre>{JSON.stringify(publicKeyJwk, undefined, 2)}</pre></div>
+      <RenderKey jsonWebKey={publicKeyJwk}/>
 
       {
         derivedKeyExported && (
           <React.Fragment>
             <br/>
             <div>Derived Key:</div>
-            <div className="formatKey"><pre>{JSON.stringify(derivedKeyExported, undefined, 2)}</pre></div>
+            <RenderKey jsonWebKey={derivedKeyExported}/>
           </React.Fragment>
         )
       }
