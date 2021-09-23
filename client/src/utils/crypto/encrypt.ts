@@ -6,10 +6,12 @@ export type EncryptedMessageType = {
 }
 
 /**
- * This function encrypts a message using a derived key
+ * This function encrypts a message using a derived key.
+ * I use btoa after encryption and atob before decryption to make the strings easier to display on the UI.
+ * Otherwise there are soemtimes emtpy spaces that look weird.
  * @param plaintext   plaintext message
  * @param derivedKey  derived symmetric key
- * @returns           a Promise for the cipher and initialization vector message, TODO decide base encoding
+ * @returns           a Promise for the cipher and initialization vector message
  */
 export default async function encrypt(
   plaintext: string,
@@ -29,12 +31,8 @@ export default async function encrypt(
     encodedText
   )
 
-
-  //convert the cipher into a string
-  const cipherStr = arrToStr(new Uint8Array(encryptedData))
-
   return {
-    cipher: btoa(cipherStr), //TODO need btoa?
-    initialization_vector: arrToStr(initializationVector) //convert the initialization vector to a string
+    cipher: btoa(arrToStr(new Uint8Array(encryptedData))), //convert the cipher into a string
+    initialization_vector: btoa(arrToStr(initializationVector)) //convert the initialization vector to a string
   }
 }

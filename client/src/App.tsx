@@ -1,14 +1,27 @@
 import React from 'react'
-import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
-import github from "github.svg"
 import { withRouter, RouteComponentProps } from "react-router"
+
 import clientPackage from "../package.json"
-import 'App.scss'
 import encrypt from 'utils/crypto/encrypt'
 import genKeys from 'utils/crypto/genKeys'
-import { EncryptedRecvType, EncryptedSendType, MetaEnum, MetaRecvType, PlaintextRecvType, PlaintextSendType, PublicKeyRecvType, PublicKeySendType } from 'utils/types'
+import {
+  EncryptedRecvType,
+  EncryptedSendType,
+  MetaEnum,
+  MetaRecvType,
+  PlaintextRecvType,
+  PlaintextSendType,
+  PublicKeyRecvType,
+  PublicKeySendType,
+  SenderDataType } from 'utils/types'
 import deriveKey from 'utils/crypto/deriveKey'
 import decrypt from 'utils/crypto/decrypt'
+
+import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
+
+import github from "github.svg"
+import 'App.scss'
+import DisplaySender from 'Components/DisplaySender/DisplaySender'
 
 type Props = RouteComponentProps
 
@@ -22,13 +35,12 @@ interface State {
 
 const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
 
+
+
 class App extends React.Component<Props,State> {
 
-  keyMap: { //this maps the sender address to the public and derived keys
-    [senderAddr:string]: {
-      derivedKey: CryptoKey,
-      publicKeyJwk: JsonWebKey,
-    }
+  senderData: { //this maps the sender address to the sender's data (public and derived keys)
+    [senderAddr:string]: SenderDataType
   } = {}
 
   //meta data trackers used to determine when to show gray label text
@@ -163,13 +175,13 @@ class App extends React.Component<Props,State> {
       const message = obj as EncryptedRecvType
 
       this.addChat(
-        JSON.stringify({
-          cipher: message.cipher,
-          initialization_vector: message.initialization_vector,
-          plaintext: await decrypt(message, this.keyMap[message.sender_addr].derivedKey)
-        }),
+        [
+          message.cipher,
+          message.initialization_vector,
+          await decrypt(message, this.senderData[message.sender_addr].derivedKey)
+        ],
         message.sender_addr,
-        "plaintext"
+        "encrypted"
       ) //add the chat to state
 
       //TODO queue?
@@ -188,7 +200,7 @@ class App extends React.Component<Props,State> {
         this.send(this.getPublicKeySend()) //broadcast the public key, TODO targeted send
       }
       else {
-        delete this.keyMap[message.sender_addr] //delete this client's key data
+        delete this.senderData[message.sender_addr] //delete this client's key data
       }
     }
     else if(obj.hasOwnProperty("plaintext")) { //if this is a plaintext broadcast
@@ -217,7 +229,7 @@ class App extends React.Component<Props,State> {
 
   processPublicKey = async (message: PublicKeyRecvType) => {
     const public_key = message.public_key //get the public key
-    this.keyMap[message.sender_addr] = { //assign the data to this sender
+    this.senderData[message.sender_addr] = { //assign the data to this sender
       derivedKey: await deriveKey(public_key, this.privateKeyJwk), //derive the symmetric key
       publicKeyJwk: public_key, //record the public key
     }
@@ -271,7 +283,7 @@ class App extends React.Component<Props,State> {
     const input = this.state.input.trim() //trim the input of any white space
     if(input) { //if there is input to send
       if(this.state.encrypt) { //if we want to encrypt
-        Object.entries(this.keyMap).forEach(async ([senderAddr,keys]) => { //encrypt the message for all recipients
+        Object.entries(this.senderData).forEach(async ([senderAddr,keys]) => { //encrypt the message for all recipients
           const content:EncryptedSendType = {
             ...(await encrypt(input, keys.derivedKey)), //encrypt the data
             recv_addr: senderAddr //specify the intended recipient
@@ -301,7 +313,9 @@ class App extends React.Component<Props,State> {
 
   render() {
     const connectionStatus = this.getConnectionStatus()
-    console.log(this.keyMap)
+    
+    const senderDataEntries = Object.entries(this.senderData)
+
     return (
       <div id="App">
         <div id="content">
@@ -337,6 +351,7 @@ class App extends React.Component<Props,State> {
           <p>Version {clientPackage.version}</p>
           <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
           <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
+          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
           
           <hr/>
 
@@ -360,17 +375,15 @@ class App extends React.Component<Props,State> {
 
           <div>
             <h3>Connected Clients</h3>
-            <ul>
-              {Object.entries(this.keyMap).map(([senderAddr, {publicKeyJwk, derivedKey}]) =>
-                <li key={senderAddr}>
-                  <div>
-                    <div>{senderAddr}</div>
-                    <div>Public Key: {JSON.stringify(publicKeyJwk)}</div>
-                    <div>Derived Key: {JSON.stringify(derivedKey)}</div>
-                  </div>
-                </li>
-              )}
-            </ul>
+            
+            {
+              senderDataEntries.length > 0
+              ? (
+                senderDataEntries.map(([senderAddr, {publicKeyJwk, derivedKey}]) =>
+                  <DisplaySender key={senderAddr} derivedKey={derivedKey} publicKeyJwk={publicKeyJwk} senderAddr={senderAddr}/>
+                )
+              ) : <div>There are no other connected clients</div>
+            }
           </div>
 
           <hr/>
@@ -379,11 +392,10 @@ class App extends React.Component<Props,State> {
           <p>The Rust server features include:</p>
           <ul>
             <li>WebSocket server</li>
-            <li>Chat rooms distinguished by route (via WebSocket protocol)</li>
+            <li>Chat rooms via routes (via WebSocket protocol)</li>
             <li>Alerts when a client connects or disconnects</li>
             <li>Broadcast or targeted messages</li>
           </ul>
-          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
 
           <hr/>
 
@@ -401,7 +413,7 @@ class App extends React.Component<Props,State> {
 
           <div>
 		          <p>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">Typescript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></p>
-		            <p><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></p>
+		          <p><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></p>
           </div>
         </div>
       </div>

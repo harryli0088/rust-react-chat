@@ -1,5 +1,7 @@
 import { EncryptedMessageType } from "./crypto/encrypt"
 
+
+/* Message Types */
 export type PublicKeySendType = { //broadcast
   public_key: JsonWebKey
 }
@@ -37,3 +39,10 @@ export type PublicKeyRecvType = RecvType & {
 }
 
 
+
+
+
+export type SenderDataType = {
+  derivedKey: CryptoKey,
+  publicKeyJwk: JsonWebKey,
+}
