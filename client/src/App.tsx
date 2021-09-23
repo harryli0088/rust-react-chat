@@ -1,7 +1,7 @@
 import React from 'react'
 import { withRouter, RouteComponentProps } from "react-router"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDoorOpen, faKey, faLock } from '@fortawesome/free-solid-svg-icons'
+import { faDoorOpen, faKey, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faRust } from '@fortawesome/free-brands-svg-icons'
 
 import clientPackage from "../package.json"
@@ -278,7 +278,7 @@ class App extends React.Component<Props,State> {
       }
 
 
-      this.addChat(input, "self", "self") //add this chat to state
+      this.addChat(input, "self", this.state.encrypt?"encrypted":"plaintext") //add this chat to state
 
       this.setState({ input: "" }) //clear the input
     }
@@ -293,11 +293,13 @@ class App extends React.Component<Props,State> {
   }
 
   render() {
+    const {
+      encrypt
+    } = this.state
+
     const connectionStatus = this.getConnectionStatus()
     
     const senderDataEntries = Object.entries(this.senderData)
-
-    console.log("publicKeyJwk",this.publicKeyJwk)
 
     return (
       <div id="App">
@@ -307,7 +309,7 @@ class App extends React.Component<Props,State> {
               Current Room: <span  className="blob">{this.props.location.pathname}</span> <span className={`blob  ${connectionStatus}`}>{connectionStatus}</span>
             </div>
 
-            <div id="chat-container" className="container">
+            <div id="chat-container">
               <div>
                 {this.state.chats.map((m,i) =>
                   <Chat key={i} {...m}/>
@@ -320,6 +322,7 @@ class App extends React.Component<Props,State> {
                 <input
                   autoFocus
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}
+                  placeholder="Aa"
                   value={this.state.input}
                 />
 
@@ -332,7 +335,7 @@ class App extends React.Component<Props,State> {
             <h2>
               End-to-End Encrypted React - Rust Chat App &nbsp;
               <a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">
-                <FontAwesomeIcon icon={faGithub} />
+                <FontAwesomeIcon className="interact" icon={faGithub} style={{color: "white"}}/>
               </a>
             </h2>
             <p>Version {clientPackage.version}</p>
@@ -343,21 +346,32 @@ class App extends React.Component<Props,State> {
             <hr/>
 
             <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
-              <h3><label htmlFor="new-room-input">Change Rooms:</label></h3>
-              <div>
-                <input
-                  id="new-room-input"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
-                  placeholder="Enter a new room code"
-                  value={this.state.newRoom}
-                />&nbsp;
+              <h3 style={{display: "inline-block"}}><label htmlFor="new-room-input">Change Rooms:</label></h3> &nbsp;
+              <input
+                id="new-room-input"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
+                placeholder="Enter a new room code"
+                value={this.state.newRoom}
+              />&nbsp;
 
-                <button type="submit">Change <FontAwesomeIcon icon={faDoorOpen}/></button>
-              </div>
-              <br/>
+              <button type="submit">Change <FontAwesomeIcon icon={faDoorOpen}/></button>
             </form>
 
             <hr/>
+
+            <div style={{display: "flex", alignItems: "center"}}>
+              <label htmlFor="toggle-encrypt" style={{cursor: "pointer"}}>Encrypt Messages:</label> &nbsp;
+              <input
+                id="toggle-encrypt"
+                type="checkbox"
+                checked={encrypt}
+                onChange={() => this.setState({encrypt: !encrypt})} style={{height: "1em"}}
+              />
+            </div>
+            <div className={`blob ${encrypt?"green":"red"}`}>
+              Your messages will {encrypt===false && "not"} be encrypted &nbsp;
+              <FontAwesomeIcon icon={encrypt ? faLock : faLockOpen}/>
+            </div>
 
             {
               this.publicKeyJwk && (
@@ -369,12 +383,9 @@ class App extends React.Component<Props,State> {
               )
             }
 
-            {this.privateKeyJwk && (
-              <React.Fragment>
-                <RenderPrivateKey jsonWebKey={this.privateKeyJwk}/>
-                <hr/>
-              </React.Fragment>
-            )}
+            {this.privateKeyJwk && <RenderPrivateKey jsonWebKey={this.privateKeyJwk}/>}
+
+            <hr/>
 
             <div>
               <h3>Connected Clients</h3>

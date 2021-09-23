@@ -42,7 +42,7 @@ const DisplaySender = (props: Props) => {
         derivedKeyExported && (
           <React.Fragment>
             <br/>
-            <div>Derived Key <FontAwesomeIcon icon={showDerivedKey ? faEye : faEyeSlash} onClick={() => setShowDerivedKey(!showDerivedKey)}/></div>
+            <div>Derived Key <FontAwesomeIcon className="interact" icon={showDerivedKey ? faEye : faEyeSlash} onClick={() => setShowDerivedKey(!showDerivedKey)}/></div>
             {showDerivedKey && <RenderKey jsonWebKey={derivedKeyExported}/>}
           </React.Fragment>
         )

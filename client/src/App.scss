@@ -26,7 +26,6 @@ $sidebar-width-tablet: 300px;
   
       #new-room-form {
         label {
-          margin-bottom: 0.5em;
           display: block;
         }
       }
@@ -61,16 +60,18 @@ $sidebar-width-tablet: 300px;
         height: 100%;
         display: flex;
         flex-direction: column-reverse;
+        padding-left: 1em;
+        padding-right: 1em;
       }
   
       #chat-form-container {
         position: relative;
         background-color: #333;
-        height: 4em;
+        height: 2.1em;
   
         #chat-form {
           position: absolute;
-          bottom: 0.6em;
+          bottom: 0;
           left: 0;
           right: 0;
   
@@ -79,12 +80,14 @@ $sidebar-width-tablet: 300px;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
             background-color: #17A589;
+            border-radius: 0;
           }
   
           input {
-            width: calc(100% - 7em);
+            width: calc(100% - 5em);
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
+            border-radius: 0;
           }
         }
       }
@@ -140,10 +143,10 @@ $sidebar-width-tablet: 300px;
     font-weight: bold;
     display: inline-block;
 
-    &.Connected {
+    &.Connected, &.green {
       background: #28B463;
     }
-    &.Closed {
+    &.Closed, &.red {
       background: #E74C3C;
     }
   }
@@ -164,12 +167,20 @@ $sidebar-width-tablet: 300px;
   }
 
   .svg-inline--fa {
-    transition: 0.5s;
-    cursor: pointer;
-    color: white;
+    &.interact {
+      transition: 0.5s;
+      cursor: pointer;
+  
+      &:hover {
+        transform: scale(1.2);
+      }
+    }
 
-    &:hover {
-      transform: scale(1.2);
+    &.green {
+      color: #28B463;
+    }
+    &.red {
+      color: #E74C3C;
     }
   }
 }

@@ -13,7 +13,7 @@ const RenderPrivateKey = (props:Props) => {
 
   return (
     <div>
-      <h4>Your Private Key <FontAwesomeIcon icon={show ? faEye : faEyeSlash} onClick={() => setShow(!show)}/></h4>
+      <h4>Your Private Key <FontAwesomeIcon className="interact" icon={show ? faEye : faEyeSlash} onClick={() => setShow(!show)}/></h4>
 
       {show && <RenderKey jsonWebKey={props.jsonWebKey}/>}
     </div>
