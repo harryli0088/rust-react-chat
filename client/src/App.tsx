@@ -23,6 +23,7 @@ import decrypt from 'utils/crypto/decrypt'
 import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
 import DisplaySender from 'Components/DisplaySender/DisplaySender'
 import RenderKey from 'Components/RenderKey/RenderKey'
+import RenderPrivateKey from 'Components/RenderPrivateKey/RenderPrivateKey'
 
 import 'App.scss'
 
@@ -39,13 +40,7 @@ interface State {
 const WS_SERVER_URL = process.env.REACT_APP_WS_SERVER_URL || "ws://localhost:8080"
 
 
-
 class App extends React.Component<Props,State> {
-
-  senderData: { //this maps the sender address to the sender's data (public and derived keys)
-    [senderAddr:string]: SenderDataType
-  } = {}
-
   //meta data trackers used to determine when to show gray label text
   lastDate: Date = new Date()
   lastSenderAddr: string = ""
@@ -55,6 +50,9 @@ class App extends React.Component<Props,State> {
   privateKeyJwk: JsonWebKey
   publicKeyJwk: JsonWebKey
   publicKeyQueue: PublicKeyRecvType[] = []
+  senderData: { //this maps the sender address to the sender's data (public and derived keys)
+    [senderAddr:string]: SenderDataType
+  } = {}
   socket: WebSocket //socket connected to the chat server
 
   constructor(props:Props) {
@@ -69,27 +67,6 @@ class App extends React.Component<Props,State> {
         //   date: new Date(),
         //   senderAddr: "tessdadfadfadfasfsdsdasfafdfafdfasfadt",
         //   showSenderAddr: true,
-        //   type: "user",
-        // },
-        // {
-        //   content: "testing testing 123",
-        //   date: new Date(),
-        //   senderAddr: "self",
-        //   showSenderAddr: true,
-        //   type: "user",
-        // },
-        // {
-        //   content: "testing testing 123",
-        //   date: new Date(),
-        //   senderAddr: "self",
-        //   showSenderAddr: false,
-        //   type: "user",
-        // },
-        // {
-        //   content: "testing testing 123",
-        //   date: new Date(),
-        //   senderAddr: "self",
-        //   showSenderAddr: false,
         //   type: "user",
         // },
       ],
@@ -385,13 +362,19 @@ class App extends React.Component<Props,State> {
             {
               this.publicKeyJwk && (
                 <React.Fragment>
-                  <h3>Your Public Key <FontAwesomeIcon icon={faKey}/></h3>
+                  <h4>Your Public Key <FontAwesomeIcon icon={faKey}/></h4>
                   <RenderKey jsonWebKey={this.publicKeyJwk}/>
-
-                  <hr/>
+                  <br/>
                 </React.Fragment>
               )
             }
+
+            {this.privateKeyJwk && (
+              <React.Fragment>
+                <RenderPrivateKey jsonWebKey={this.privateKeyJwk}/>
+                <hr/>
+              </React.Fragment>
+            )}
 
             <div>
               <h3>Connected Clients</h3>
@@ -409,7 +392,7 @@ class App extends React.Component<Props,State> {
         </div>
 
         <div id="description" className="container">
-          <h3>Rust Overview <FontAwesomeIcon icon={faRust}/></h3>
+          <h2>Rust Overview <FontAwesomeIcon icon={faRust}/></h2>
           <p>The Rust server features include:</p>
           <ul>
             <li>WebSocket server</li>
@@ -420,19 +403,20 @@ class App extends React.Component<Props,State> {
 
           <hr/>
 
-          <h3>End-to-End Encryption Overview <FontAwesomeIcon icon={faLock}/></h3>
+          <h2>End-to-End Encryption Overview <FontAwesomeIcon icon={faLock}/></h2>
 
-          <p>Intro</p>
-          <p>Key Generation</p>
-          <p>Public Key Broadcasting</p>
-          <p>Encryption/Decryption</p>
-          <p>Message Integrity</p>
-          <p>Out-of-Band Verification</p>
-          <p>How do you know that the server isn't faking the public keys? It's possible for a malicious server Eve to break the encryption by simply generating its own keys and intercepting mesages. When Alice sends her public key to Bob, Eve stores it, but then sends Eve's public key to Bob, pretending that it's Alice's. In the same way, Eve takes Bob's public key, but sends Eve's public key to Alice. In this way, Eve can intercept a message from Alice, decrypt it, then re-encrypt it to send to Bob. Alice and Bob would be none the wiser. It is therefore critical to validate public keys. The only way to do this is via out-of-band verification. Alice and Bob need to communicate in some way outside this app and verify each other's keys. Signal implements this with safety numbers <a href="https://support.signal.org/hc/en-us/articles/360007060632-What-is-a-safety-number-and-why-do-I-see-that-it-changed-" target="_blank" rel="noopener noreferrer">safety numbers</a>. <a href="https://ssd.eff.org/en/module/key-verification" target="_blank" rel="noopener noreferrer">Read more</a>.</p>
+          <h3>Intro</h3>
+          <h3>Key Generation</h3>
+          <h3>Public Key Broadcasting</h3>
+          <h3>Encryption/Decryption</h3>
+          <h3>Message Integrity</h3>
+          
+          <h3>Out-of-Band Verification</h3>
+          <p>How do you know that the server isn't faking the public keys? It's possible for a malicious server Eve to break the encryption by simply generating its own keys and intercepting mesages. When Alice sends her public key to Bob, Eve stores it, but then sends Eve's public key to Bob, pretending that it's Alice's. In the same way, Eve takes Bob's public key, but sends Eve's public key to Alice. In this way, Eve can intercept a message from Alice, decrypt it, then re-encrypt it to send to Bob. Alice and Bob would be none the wiser. It is therefore critical to validate public keys. The only way to do this is via <a href="https://ssd.eff.org/en/module/key-verification" target="_blank" rel="noopener noreferrer">out-of-band verification</a>. Alice and Bob need to communicate in some way outside this app and verify each other's keys. Signal implements this with <a href="https://support.signal.org/hc/en-us/articles/360007060632-What-is-a-safety-number-and-why-do-I-see-that-it-changed-" target="_blank" rel="noopener noreferrer">safety numbers</a>.</p>
         </div>
 
         <footer className="container">
-          <div>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">Typescript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></div>
+          <div>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">TypeScript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></div>
           <br/>
           <div><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></div>
         </footer>
