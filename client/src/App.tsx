@@ -26,8 +26,8 @@ class App extends React.Component<Props,State> {
 
   keyMap: { //this maps the sender address to the public and derived keys
     [senderAddr:string]: {
-      public: JsonWebKey,
-      derived: CryptoKey,
+      derivedKey: CryptoKey,
+      publicKeyJwk: JsonWebKey,
     }
   } = {}
 
@@ -166,7 +166,7 @@ class App extends React.Component<Props,State> {
         JSON.stringify({
           cipher: message.cipher,
           initialization_vector: message.initialization_vector,
-          plaintext: await decrypt(message, this.keyMap[message.sender_addr].derived)
+          plaintext: await decrypt(message, this.keyMap[message.sender_addr].derivedKey)
         }),
         message.sender_addr,
         "plaintext"
@@ -218,8 +218,8 @@ class App extends React.Component<Props,State> {
   processPublicKey = async (message: PublicKeyRecvType) => {
     const public_key = message.public_key //get the public key
     this.keyMap[message.sender_addr] = { //assign the data to this sender
-      derived: await deriveKey(public_key, this.privateKeyJwk), //derive the symmetric key
-      public: public_key, //record the public key
+      derivedKey: await deriveKey(public_key, this.privateKeyJwk), //derive the symmetric key
+      publicKeyJwk: public_key, //record the public key
     }
 
     this.addChat( //add the chat to state
@@ -273,7 +273,7 @@ class App extends React.Component<Props,State> {
       if(this.state.encrypt) { //if we want to encrypt
         Object.entries(this.keyMap).forEach(async ([senderAddr,keys]) => { //encrypt the message for all recipients
           const content:EncryptedSendType = {
-            ...(await encrypt(input, keys.derived)), //encrypt the data
+            ...(await encrypt(input, keys.derivedKey)), //encrypt the data
             recv_addr: senderAddr //specify the intended recipient
           }
           this.send(content) //send the chat to the socket
@@ -301,7 +301,7 @@ class App extends React.Component<Props,State> {
 
   render() {
     const connectionStatus = this.getConnectionStatus()
-
+    console.log(this.keyMap)
     return (
       <div id="App">
         <div id="content">
@@ -333,16 +333,11 @@ class App extends React.Component<Props,State> {
         <div id="sidebar">
           <a id="github" href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer"><img src={github} alt="github repo"/></a>
 
-          <h2>React - Rust Chat App</h2>
+          <h2>End-to-End Encrypted React - Rust Chat App</h2>
           <p>Version {clientPackage.version}</p>
-          <p>I created this chat room prototype to learn how to use Rust. The Rust server features include:</p>
-          <ul>
-            <li>WebSocket server</li>
-            <li>Chat rooms distinguished by route (via WebSocket protocol)</li>
-            <li>Alerts when a client connects or disconnects</li>
-          </ul>
-          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
-
+          <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
+          <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
+          
           <hr/>
 
           <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
@@ -363,9 +358,37 @@ class App extends React.Component<Props,State> {
 
           <hr/>
 
+          <div>
+            <h3>Connected Clients</h3>
+            <ul>
+              {Object.entries(this.keyMap).map(([senderAddr, {publicKeyJwk, derivedKey}]) =>
+                <li key={senderAddr}>
+                  <div>
+                    <div>{senderAddr}</div>
+                    <div>Public Key: {JSON.stringify(publicKeyJwk)}</div>
+                    <div>Derived Key: {JSON.stringify(derivedKey)}</div>
+                  </div>
+                </li>
+              )}
+            </ul>
+          </div>
+
+          <hr/>
+
+          <h3>Rust Overview</h3>
+          <p>The Rust server features include:</p>
+          <ul>
+            <li>WebSocket server</li>
+            <li>Chat rooms distinguished by route (via WebSocket protocol)</li>
+            <li>Alerts when a client connects or disconnects</li>
+            <li>Broadcast or targeted messages</li>
+          </ul>
+          <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
+
+          <hr/>
+
           <h3>End-to-End Encryption Overview</h3>
 
-          <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encrypted systems.</p>
 
           <p>Intro</p>
           <p>Key Generation</p>
