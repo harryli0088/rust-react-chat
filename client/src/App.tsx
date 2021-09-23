@@ -1,12 +1,14 @@
 import React from 'react'
-import Chat, { ChatType } from "Components/Chat/Chat"
+import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
 import github from "github.svg"
 import { withRouter, RouteComponentProps } from "react-router"
 import clientPackage from "../package.json"
 import 'App.scss'
-import encrypt, { EncryptedMessageType } from 'utils/crypto/encrypt'
+import encrypt from 'utils/crypto/encrypt'
 import genKeys from 'utils/crypto/genKeys'
-import { EncryptedSendType, PlaintextSendType, PublicKeySendType } from 'utils/types'
+import { EncryptedRecvType, EncryptedSendType, MetaEnum, MetaRecvType, PlaintextRecvType, PlaintextSendType, PublicKeyRecvType, PublicKeySendType } from 'utils/types'
+import deriveKey from 'utils/crypto/deriveKey'
+import decrypt from 'utils/crypto/decrypt'
 
 type Props = RouteComponentProps
 
@@ -37,6 +39,7 @@ class App extends React.Component<Props,State> {
   pingInterval: number = -1 //pinging is important to keep WebSocket connections alive when using AWS Elastic Beanstalk
   privateKeyJwk: JsonWebKey
   publicKeyJwk: JsonWebKey
+  publicKeyQueue: PublicKeyRecvType[] = []
   socket: WebSocket //socket connected to the chat server
 
   constructor(props:Props) {
@@ -122,8 +125,9 @@ class App extends React.Component<Props,State> {
       genKeys().then(({publicKeyJwk, privateKeyJwk}) => {
         this.publicKeyJwk = publicKeyJwk
         this.privateKeyJwk = privateKeyJwk
-        console.log(publicKeyJwk)
         this.send(this.getPublicKeySend()) //broadcast the public key
+
+        this.publicKeyQueue.forEach(this.processPublicKey) //process any outstanding public keys
       })
       
 
@@ -133,18 +137,14 @@ class App extends React.Component<Props,State> {
       this.pingInterval = window.setInterval(this.ping, 30000) //set up an interval to ping the server
     }
 
-    socket.onmessage = (message:MessageEvent<any>) => {
+    socket.onmessage = async (message:MessageEvent<any>) => {
       // console.log("MESSAGE", message)
       try {
         const parsed = JSON.parse(message.data) //try parsing the message as JSON
-        this.addChatFromSocket( //add this message to state
-          parsed.message,
-          parsed.sender_addr,
-          parsed.type_key
-        )
+        await this.addChatFromSocket(parsed) //add this message to state
       }
       catch(err) {
-        console.error(err)
+        console.error("TESTING",err)
       }
     }
 
@@ -157,20 +157,79 @@ class App extends React.Component<Props,State> {
 
   ping = () => this.socket.send("") //send empty string
 
-  addChatFromSocket = (content: string | EncryptedMessageType, senderAddr:string, type: string) => {
-    //TODO check if this is
-    // - a public key broadcast, save the public key to the senderAddr
-    // - a plaintext broadcast
-    // - an encrypted message, decrypt, then save
+  addChatFromSocket = async (obj: Object) => {
+    //TODO validate schema
+    if(obj.hasOwnProperty("cipher")) { //if this is an encrypted message
+      const message = obj as EncryptedRecvType
 
-    this.addChat(content, senderAddr, type) //add the chat to state
+      this.addChat(
+        JSON.stringify({
+          cipher: message.cipher,
+          initialization_vector: message.initialization_vector,
+          plaintext: await decrypt(message, this.keyMap[message.sender_addr].derived)
+        }),
+        message.sender_addr,
+        "plaintext"
+      ) //add the chat to state
+
+      //TODO queue?
+    }
+    else if(obj.hasOwnProperty("meta")) { //if this is a meta broadcast
+      const message = obj as MetaRecvType
+
+      const connected = message.meta===MetaEnum.connected
+      this.addChat( //add the chat to state
+        `Client ${message.sender_addr} ${connected?"":"dis"}connected`,
+        message.sender_addr, 
+        "meta"
+      )
+
+      if(connected) { //if this client just connected
+        this.send(this.getPublicKeySend()) //broadcast the public key, TODO targeted send
+      }
+      else {
+        delete this.keyMap[message.sender_addr] //delete this client's key data
+      }
+    }
+    else if(obj.hasOwnProperty("plaintext")) { //if this is a plaintext broadcast
+      const message = obj as PlaintextRecvType
+
+      this.addChat(message.plaintext, message.sender_addr, "plaintext") //add the chat to state
+    }
+    else if(obj.hasOwnProperty("public_key")) { //if this is a public key broadcast
+      const message = obj as PublicKeyRecvType
+
+      if(this.privateKeyJwk) { //if my private key is ready
+        await this.processPublicKey(message)
+      }
+      else { //else I need to wait for my private key to finish generating
+        this.publicKeyQueue.push(message) //save this message to be processed later
+      }
+    }
+    else {
+      console.warn("Unexpected message type", obj)
+    }
 
     this.setState({ //update the socket state
       socketReadyState: this.socket.readyState,
     })
   }
 
-  addChat = (content: React.ReactNode, senderAddr:string, type: string) => {
+  processPublicKey = async (message: PublicKeyRecvType) => {
+    const public_key = message.public_key //get the public key
+    this.keyMap[message.sender_addr] = { //assign the data to this sender
+      derived: await deriveKey(public_key, this.privateKeyJwk), //derive the symmetric key
+      public: public_key, //record the public key
+    }
+
+    this.addChat( //add the chat to state
+      `Received Client ${message.sender_addr}'s public key`,
+      message.sender_addr, 
+      "meta"
+    )
+  }
+
+  addChat = (content: React.ReactNode, senderAddr:string, type: ChatTypeType) => {
     const date = new Date()
     const chat:ChatType = {
       content,
@@ -226,7 +285,7 @@ class App extends React.Component<Props,State> {
       }
 
 
-      this.addChat(input, "self", "user") //add this chat to state
+      this.addChat(input, "self", "self") //add this chat to state
 
       this.setState({ input: "" }) //clear the input
     }

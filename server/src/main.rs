@@ -65,7 +65,6 @@ enum BroadcastRecvEnum {
   PublicKeyRecvStruct { //broadcast
     public_key: JsonWebKey,
   },
-  Unknown(String)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -88,7 +87,6 @@ enum BroadcastSendEnum {
     public_key: JsonWebKey,
     sender_addr: SocketAddr,
   },
-  
 }
 
 /****************************************************/
@@ -173,10 +171,6 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
           public_key,
           sender_addr,
         }
-      }
-      _ => BroadcastSendEnum::PlaintextSendStruct {
-        plaintext: String::from("testing123"),
-        sender_addr,
       }
     };
 

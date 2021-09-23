@@ -9,6 +9,8 @@ export type ChatType = {
   type: string,
 }
 
+export type ChatTypeType = "encrypted" | "meta" | "plaintext" | "self" //the name is kind of terrible...
+
 interface State {}
 
 class Chat extends React.Component<ChatType,State> {

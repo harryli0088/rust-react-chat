@@ -17,16 +17,23 @@ export type RecvType = {
   sender_addr: string,
 }
 
-export type MetaRecvType = RecvType & {
-  meta: number, //0 is client joined, 1 is client left
+export type EncryptedRecvType = RecvType & EncryptedMessageType
+
+export enum MetaEnum {
+  connected = 0,
+  disconnected,
 }
 
-export type PublicKeyRecvType = RecvType & {
-  public_key: JsonWebKey,
+export type MetaRecvType = RecvType & {
+  meta: MetaEnum,
 }
 
 export type PlaintextRecvType = RecvType & {
   plaintext: string,
 }
 
-export type EncryptedRecvType = RecvType & EncryptedMessageType
+export type PublicKeyRecvType = RecvType & {
+  public_key: JsonWebKey,
+}
+
+
