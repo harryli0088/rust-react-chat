@@ -138,7 +138,7 @@ class App extends React.Component<Props,State> {
         await this.addChatFromSocket(parsed) //add this message to state
       }
       catch(err) {
-        console.error("TESTING",err)
+        console.error(err)
       }
     }
 
@@ -420,8 +420,8 @@ class App extends React.Component<Props,State> {
           <h3>Intro</h3>
           <p>This is and end-to-end encrypted chat app that uses the <BlankAnchor href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto">Subtle Web Crypto API</BlankAnchor> for encryption and sends messages to other clients via a Rust WebSocket server. I followed <BlankAnchor href="https://getstream.io/blog/web-crypto-api-chat/">this Stream tutorial</BlankAnchor> to implement the encryption logic.</p>
 
-          <h3>Key Generation</h3>
-          <p>A client called Alice generates a public key and private key using the <BlankAnchor href="https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman">Elliptic Curve Diffie-Hellman (ECDH)</BlankAnchor> algorithm, which enables 2 people to share their public keys and generate a shared secret symmetric key for encryption.</p>
+          <h3>Ephemeral Key Generation</h3>
+          <p>A client called Alice generates a public key and private key using the <BlankAnchor href="https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman">Elliptic Curve Diffie-Hellman (ECDH)</BlankAnchor> algorithm, which enables 2 people to share their public keys and generate a shared secret symmetric key for encryption. Alice creates these ephemeral keys when connecting to this website and deletes her keys once she disconnects.</p>
 
           <h3>Public Key Broadcasting</h3>
           <p>Once Alice connects with the server and generates a key-pair, Alice sends her public key to the WebSocket server. The server then broadcasts the public key to the other clients in the room. In turn, the other clients in the room also send their public keys to Alice, so that every client has the public keys of all the other clients.</p>

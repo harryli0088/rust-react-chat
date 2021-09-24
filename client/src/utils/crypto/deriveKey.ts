@@ -15,8 +15,8 @@ export default async function deriveKey (
     "jwk",
     publicKeyJwk,
     {
-      name: "ECDH", //TODO learn this
-      namedCurve: "P-256", //TODO learn this
+      name: "ECDH",
+      namedCurve: "P-256",
     },
     true,
     []
@@ -30,10 +30,10 @@ export default async function deriveKey (
       namedCurve: "P-256",
     },
     true,
-    ["deriveKey", "deriveBits"] //TODO learn this
+    ["deriveKey", "deriveBits"]
   );
 
-  /* Derive the key */
+  /* Derive the shared symmetric key */
   return await window.crypto.subtle.deriveKey(
     { name: "ECDH", public: publicKey },
     privateKey,
