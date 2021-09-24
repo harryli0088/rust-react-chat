@@ -285,6 +285,10 @@ class App extends React.Component<Props,State> {
     })
   }
 
+  /**
+   * Convert the socket ready state code to a string
+   * @returns a string representation of the socket state
+   */
   getConnectionStatus = () => {
     switch(this.state.socketReadyState) {
       case 0:
@@ -388,7 +392,7 @@ class App extends React.Component<Props,State> {
             </h2>
             <p>Version {clientPackage.version}</p>
             <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
-            <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security professionals. This is simply a side project for me to learn about end-to-end encryption.</p>
+            <p id="disclaimer"><b>DISCLAIMER:</b> This is probably not a cyrptographically secure system and has not been validated by security experts. This is just a side project for me to learn about end-to-end encryption.</p>
             <p>(Note: Heroku free tier server takes several seconds to wake up from sleep mode)</p>
             
             <hr/>
