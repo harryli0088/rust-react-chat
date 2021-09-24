@@ -50,7 +50,7 @@ class App extends React.Component<Props,State> {
   pingInterval: number = -1 //pinging is important to keep WebSocket connections alive when using AWS Elastic Beanstalk
   privateKeyJwk: JsonWebKey
   publicKeyJwk: JsonWebKey
-  publicKeyQueue: PublicKeyRecvType[] = []
+  publicKeyQueue: PublicKeyRecvType[] = [] //we may receive public keys before our own keys have finished generating. push those public keys in here to process once we're ready
   senderData: { //this maps the sender address to the sender's data (public and derived keys)
     [senderAddr:string]: SenderDataType
   } = {}
@@ -86,7 +86,7 @@ class App extends React.Component<Props,State> {
   }
 
   componentDidMount() {
-    this.socket = this.setUpSocket()
+    this.socket = this.setUpSocket() //set up the socket once we mount
   }
 
   componentDidUpdate(prevProps:Props) {
@@ -98,44 +98,54 @@ class App extends React.Component<Props,State> {
   }
 
   componentWillUnmount() {
-    this.socket.close()
+    this.socket.close() //close the socket before we unmount
   }
 
-  send = (obj: Object) => {
-    this.socket.send(JSON.stringify(obj))
-  }
-
-  getPublicKeySend = ():PublicKeySendType => ({public_key: this.publicKeyJwk})
-
+  /**
+   * Connect to the server, generate new keys, set up message handlers
+   * @returns the socket
+   */
   setUpSocket = () => {
     this.setState({socketReadyState: 0}) //mark that we are making a new WebSocket connection
+
     const socket = new WebSocket( //try connecting to the server
       WS_SERVER_URL,
       this.props.location.pathname.replace(/\//ig, "-") //pass the URL pathname as the protocol ('/' characters are replaced with '-')
     )
 
-    socket.onopen = () => {
-      genKeys().then(({publicKeyJwk, privateKeyJwk}) => {
+    socket.onopen = () => { //once we connect to the server
+      genKeys().then(({publicKeyJwk, privateKeyJwk}) => { //generate our key-pair
+        //save our keys
         this.publicKeyJwk = publicKeyJwk
         this.privateKeyJwk = privateKeyJwk
-        this.send(this.getPublicKeySend()) //broadcast the public key
+
+        this.send(this.formatPublicKeyMessage()) //broadcast our public key
 
         this.publicKeyQueue.forEach(this.processPublicKey) //process any outstanding public keys
-        this.forceUpdate()
+        this.forceUpdate() //force a re-render
       })
       
 
-      this.addChat(<span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>, "self", "meta")
+      this.addChat( //add a meta chat indicating we've connected
+        <span>You have joined the chat room <span className="blob">{this.props.location.pathname}</span></span>,
+        "self",
+        "meta"
+      )
+
       this.setState({socketReadyState: socket.readyState}) //mark the new socket state
+
+      /* Set up pinging */
       clearInterval(this.pingInterval) //clear the previous interval
-      this.pingInterval = window.setInterval(this.ping, 30000) //set up an interval to ping the server
+      this.pingInterval = window.setInterval( //set up an interval to ping the server
+        () => this.socket.send(""), //send empty string
+        30000
+      )
     }
 
     socket.onmessage = async (message:MessageEvent<any>) => {
       // console.log("MESSAGE", message)
       try {
-        const parsed = JSON.parse(message.data) //try parsing the message as JSON
-        await this.addChatFromSocket(parsed) //add this message to state
+        await this.processSocketMessage(message) //process this message
       }
       catch(err) {
         console.error(err)
@@ -144,17 +154,35 @@ class App extends React.Component<Props,State> {
 
     socket.onclose = () => {
       this.setState({socketReadyState: socket.readyState})
+      //TODO try reconnecting?
     }
 
     return socket
   }
 
-  ping = () => this.socket.send("") //send empty string
+  /**
+   * Utils function to JSON stringify and object then send it to the server
+   * @param obj any object
+   */
+  send = (obj: Object) => {
+    this.socket.send(JSON.stringify(obj))
+  }
 
-  addChatFromSocket = async (obj: Object) => {
+  /**
+   * @returns the public key in the right format to send to the server
+   */
+  formatPublicKeyMessage = ():PublicKeySendType => ({public_key: this.publicKeyJwk})
+
+  /**
+   * Process a message from a socket
+   * @param message socket message
+   */
+  processSocketMessage = async (message:MessageEvent) => {
+    const parsed = JSON.parse(message.data) //try parsing the message as JSON
+
     //TODO validate schema
-    if(obj.hasOwnProperty("cipher")) { //if this is an encrypted message
-      const message = obj as EncryptedRecvType
+    if(parsed.hasOwnProperty("cipher")) { //if this is an encrypted message
+      const message = parsed as EncryptedRecvType
 
       this.addChat(
         [
@@ -168,8 +196,8 @@ class App extends React.Component<Props,State> {
 
       //TODO queue?
     }
-    else if(obj.hasOwnProperty("meta")) { //if this is a meta broadcast
-      const message = obj as MetaRecvType
+    else if(parsed.hasOwnProperty("meta")) { //if this is a meta broadcast
+      const message = parsed as MetaRecvType
 
       const connected = message.meta===MetaEnum.connected
       this.addChat( //add the chat to state
@@ -179,29 +207,29 @@ class App extends React.Component<Props,State> {
       )
 
       if(connected) { //if this client just connected
-        this.send(this.getPublicKeySend()) //broadcast the public key, TODO targeted send
+        this.send(this.formatPublicKeyMessage()) //broadcast the public key, TODO targeted send
       }
       else {
         delete this.senderData[message.sender_addr] //delete this client's key data
       }
     }
-    else if(obj.hasOwnProperty("plaintext")) { //if this is a plaintext broadcast
-      const message = obj as PlaintextRecvType
+    else if(parsed.hasOwnProperty("plaintext")) { //if this is a plaintext broadcast
+      const message = parsed as PlaintextRecvType
 
       this.addChat(message.plaintext, message.sender_addr, "plaintext") //add the chat to state
     }
-    else if(obj.hasOwnProperty("public_key")) { //if this is a public key broadcast
-      const message = obj as PublicKeyRecvType
+    else if(parsed.hasOwnProperty("public_key")) { //if this is a public key broadcast
+      const message = parsed as PublicKeyRecvType
 
       if(this.privateKeyJwk) { //if my private key is ready
-        await this.processPublicKey(message)
+        await this.processPublicKey(message) //process this private key
       }
       else { //else I need to wait for my private key to finish generating
         this.publicKeyQueue.push(message) //save this message to be processed later
       }
     }
     else {
-      console.warn("Unexpected message type", obj)
+      console.warn("Unexpected message", parsed)
     }
 
     this.setState({ //update the socket state
@@ -209,22 +237,33 @@ class App extends React.Component<Props,State> {
     })
   }
 
+  /**
+   * Given a public key message, save the public key for this sender and derived the symmetric key
+   * @param message parsed public key message
+   */
   processPublicKey = async (message: PublicKeyRecvType) => {
-    const public_key = message.public_key //get the public key
-    this.senderData[message.sender_addr] = { //assign the data to this sender
+    const { public_key, sender_addr } = message
+
+    this.senderData[sender_addr] = { //assign the data to this sender
       derivedKey: await deriveKey(public_key, this.privateKeyJwk), //derive the symmetric key
       publicKeyJwk: public_key, //record the public key
     }
 
     this.addChat( //add the chat to state
-      `Received Client ${message.sender_addr}'s public key`,
-      message.sender_addr, 
+      `Received Client ${sender_addr}'s public key`,
+      sender_addr, 
       "meta"
     )
   }
 
+  /**
+   * Add a new chat to the state with meta data (time stamp, whether to show the sender name)
+   * @param content     content to display
+   * @param senderAddr  the sender address
+   * @param type        the message type
+   */
   addChat = (content: React.ReactNode, senderAddr:string, type: ChatTypeType) => {
-    const date = new Date()
+    const date = new Date() //get the timestamp
     const chat:ChatType = {
       content,
       date,
@@ -259,7 +298,11 @@ class App extends React.Component<Props,State> {
     }
   }
 
-  onChatTypeSubmit = (e:React.FormEvent<HTMLFormElement>) => {
+  /**
+   * Callback function to submit and possibly encrypt the message to the server
+   * @param e submit event
+   */
+  submitMessage = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const input = this.state.input.trim() //trim the input of any white space
@@ -279,13 +322,17 @@ class App extends React.Component<Props,State> {
       }
 
 
-      this.addChat(input, "self", this.state.encrypt?"encrypted":"plaintext") //add this chat to state
+      this.addChat(input, "self", this.state.encrypt?"encrypted":"plaintext") //add this chat to our own state
 
       this.setState({ input: "" }) //clear the input
     }
   }
 
-  onNewRoomSubmit = (e:React.FormEvent<HTMLFormElement>) => {
+  /**
+   * Callback function to move to a new room
+   * @param e submit event
+   */
+  newRoomSubmit = (e:React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const newRoomURI = encodeURIComponent(this.state.newRoom) //URI encode the inputed string
@@ -319,7 +366,7 @@ class App extends React.Component<Props,State> {
             </div>
 
             <div id="chat-form-container">
-              <form id="chat-form" onSubmit={this.onChatTypeSubmit}>
+              <form id="chat-form" onSubmit={this.submitMessage}>
                 <input
                   autoFocus
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({input: e.target.value})}
@@ -346,7 +393,7 @@ class App extends React.Component<Props,State> {
             
             <hr/>
 
-            <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
+            <form id="new-room-form" onSubmit={this.newRoomSubmit}>
               {/* <h3 style={{display: "inline-block"}}><label htmlFor="new-room-input">Change Rooms:</label></h3> &nbsp; */}
               <input
                 id="new-room-input"
