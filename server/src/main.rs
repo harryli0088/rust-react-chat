@@ -204,7 +204,7 @@ async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, client_addr
 
     //send the message to all the recipients
     for recp in broadcast_recipients {
-      recp.sender.unbounded_send(send.clone()).unwrap();
+      recp.sender.unbounded_send(send.clone()).expect("Failed to send message");
     }
   };
 
