@@ -20,6 +20,7 @@ import {
 import deriveKey from 'utils/crypto/deriveKey'
 import decrypt from 'utils/crypto/decrypt'
 
+import BlankAnchor from 'Components/BlankAnchor'
 import Chat, { ChatType, ChatTypeType } from "Components/Chat/Chat"
 import DisplaySender from 'Components/DisplaySender/DisplaySender'
 import RenderKey from 'Components/RenderKey/RenderKey'
@@ -334,9 +335,9 @@ class App extends React.Component<Props,State> {
           <div id="sidebar">
             <h2>
               End-to-End Encrypted React - Rust Chat App &nbsp;
-              <a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">
+              <BlankAnchor href="https://github.com/harryli0088/rust-react-chat">
                 <FontAwesomeIcon className="interact" icon={faGithub} style={{color: "white"}}/>
-              </a>
+              </BlankAnchor>
             </h2>
             <p>Version {clientPackage.version}</p>
             <p>I created this chat room prototype to learn how to use Rust and about end-to-end encryption.</p>
@@ -346,7 +347,7 @@ class App extends React.Component<Props,State> {
             <hr/>
 
             <form id="new-room-form" onSubmit={this.onNewRoomSubmit}>
-              <h3 style={{display: "inline-block"}}><label htmlFor="new-room-input">Change Rooms:</label></h3> &nbsp;
+              {/* <h3 style={{display: "inline-block"}}><label htmlFor="new-room-input">Change Rooms:</label></h3> &nbsp; */}
               <input
                 id="new-room-input"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
@@ -354,7 +355,7 @@ class App extends React.Component<Props,State> {
                 value={this.state.newRoom}
               />&nbsp;
 
-              <button type="submit">Change <FontAwesomeIcon icon={faDoorOpen}/></button>
+              <button type="submit">Change Rooms<FontAwesomeIcon icon={faDoorOpen}/></button>
             </form>
 
             <hr/>
@@ -368,7 +369,7 @@ class App extends React.Component<Props,State> {
                 onChange={() => this.setState({encrypt: !encrypt})} style={{height: "1em"}}
               />
             </div>
-            <div className={`blob ${encrypt?"green":"red"}`}>
+            <div className={`blob ${encrypt?"green":"red"}`} style={{textAlign: "center"}}>
               Your messages will {encrypt===false && "not"} be encrypted &nbsp;
               <FontAwesomeIcon icon={encrypt ? faLock : faLockOpen}/>
             </div>
@@ -417,19 +418,32 @@ class App extends React.Component<Props,State> {
           <h2>End-to-End Encryption Overview <FontAwesomeIcon icon={faLock}/></h2>
 
           <h3>Intro</h3>
+          <p>This is and end-to-end encrypted chat app that uses the <BlankAnchor href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto">Subtle Web Crypto API</BlankAnchor> for encryption and sends messages to other clients via a Rust WebSocket server. I followed <BlankAnchor href="https://getstream.io/blog/web-crypto-api-chat/">this Stream tutorial</BlankAnchor> to implement the encryption logic.</p>
+
           <h3>Key Generation</h3>
+          <p>A client called Alice generates a public key and private key using the <BlankAnchor href="https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman">Elliptic Curve Diffie-Hellman (ECDH)</BlankAnchor> algorithm, which enables 2 people to share their public keys and generate a shared secret symmetric key for encryption.</p>
+
           <h3>Public Key Broadcasting</h3>
+          <p>Once Alice connects with the server and generates a key-pair, Alice sends her public key to the WebSocket server. The server then broadcasts the public key to the other clients in the room. In turn, the other clients in the room also send their public keys to Alice, so that every client has the public keys of all the other clients.</p>
+
+          <h3>Deriving a Shared Secret Symmetric Key</h3>
+          <p>When Alice receives a public key from another client Bob, Alice combines his <i>public</i> key with her own <i>private</i> key to derive a new key. Bob combines Alice's public key with his private key to also derive a new key. Because of the Diffie-Hellman algorithm, Alice and Bob actually end up separately deriving the <i>same symmetric key</i> which they can use to encrypt their messages to each other. As long as Alice and Bob protect their own private keys, it is computationally infeasible for someone else to calculate their secret symmetric key.</p>
+
           <h3>Encryption/Decryption</h3>
+          <p>Encryption is done using the Advanced Encryption Standard - Galois/Counter Mode (<BlankAnchor href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf">AES-GCM</BlankAnchor>) algorithm, which uses a randomly generated initialization vector to convert the plaintext message into an encrypted ciphertext. When Alice wants to send an encrypted message, she encrypts the plaintext message for every separate recipient. She sends a ciphertext, the initialization vector, and the recipient address to the server, which routes the targeted message to the intended recipient.</p>
+          <p>When Bob receives an encrypted message from Alice, he uses their derived symmetric key to decrypt the message.</p>
+
           <h3>Message Integrity</h3>
+          <p>How do we know that a malicious attacker/server Eve didn't tamper with the message in-transit, aka a <BlankAnchor href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">man-in-the-middle attack</BlankAnchor>? Symmetric encryption schemes could use <BlankAnchor href="https://en.wikipedia.org/wiki/Message_authentication_code">message authentication codes</BlankAnchor>. The nice thing about AES-GCM is that it handles message integrity; if Eve tampers with the message, the decryption process will probably fail (<BlankAnchor href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf">see this document, page 26</BlankAnchor>).</p>
           
           <h3>Out-of-Band Verification</h3>
-          <p>How do you know that the server isn't faking the public keys? It's possible for a malicious server Eve to break the encryption by simply generating its own keys and intercepting mesages. When Alice sends her public key to Bob, Eve stores it, but then sends Eve's public key to Bob, pretending that it's Alice's. In the same way, Eve takes Bob's public key, but sends Eve's public key to Alice. In this way, Eve can intercept a message from Alice, decrypt it, then re-encrypt it to send to Bob. Alice and Bob would be none the wiser. It is therefore critical to validate public keys. The only way to do this is via <a href="https://ssd.eff.org/en/module/key-verification" target="_blank" rel="noopener noreferrer">out-of-band verification</a>. Alice and Bob need to communicate in some way outside this app and verify each other's keys. Signal implements this with <a href="https://support.signal.org/hc/en-us/articles/360007060632-What-is-a-safety-number-and-why-do-I-see-that-it-changed-" target="_blank" rel="noopener noreferrer">safety numbers</a>.</p>
+          <p>How do we know that the server isn't faking the public keys? It's possible for a malicious server Eve to break the encryption by simply generating her own keys and intercepting mesages. When Alice sends her public key to Bob, Eve stores it, but then sends <i>Eve's</i> public key to Bob, pretending that it's Alice's. In the same way, Eve takes Bob's public key, but sends <i>Eve's</i> public key to Alice. In this way, Eve can intercept a message from Alice, decrypt it, then re-encrypt it to send to Bob (and vise versa). Alice and Bob would be none the wiser. It is therefore critical to validate public keys. The only way to do this is via <BlankAnchor href="https://ssd.eff.org/en/module/key-verification">out-of-band verification</BlankAnchor>. Alice and Bob need to communicate in some way outside this app and verify each other's keys. Signal implements this with <BlankAnchor href="https://support.signal.org/hc/en-us/articles/360007060632-What-is-a-safety-number-and-why-do-I-see-that-it-changed-">safety numbers</BlankAnchor>.</p>
         </div>
 
         <footer className="container">
-          <div>Built using <a href="https://reactjs.org/" target="_blank" rel="noopener noreferrer">React</a>, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener noreferrer">TypeScript</a>, <a href="https://fontawesome.com/license" target="_blank" rel="noopener noreferrer">Font Awesome</a>, and <a href="https://www.rust-lang.org/" target="_blank" rel="noopener noreferrer">Rust</a></div>
+          <div>Built using <BlankAnchor href="https://reactjs.org/">React</BlankAnchor>, <BlankAnchor href="https://www.typescriptlang.org/">TypeScript</BlankAnchor>, <BlankAnchor href="https://fontawesome.com/license">Font Awesome</BlankAnchor>, and <BlankAnchor href="https://www.rust-lang.org/">Rust</BlankAnchor></div>
           <br/>
-          <div><a href="https://github.com/harryli0088/rust-react-chat" target="_blank" rel="noopener noreferrer">Github Repo</a></div>
+          <div><BlankAnchor href="https://github.com/harryli0088/rust-react-chat">Github Repo</BlankAnchor></div>
         </footer>
       </div>
     );
