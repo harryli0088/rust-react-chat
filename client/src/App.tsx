@@ -92,13 +92,13 @@ class App extends React.Component<Props,State> {
   componentDidUpdate(prevProps:Props) {
     //if the URL (ie the room) has changed
     if(prevProps.location.pathname !== this.props.location.pathname) {
-      this.socket.close() //close the current socket connection
+      this.breakdownSocket() //break down the current connection
       this.socket = this.setUpSocket() //then open up a new one for the new URL
     }
   }
 
   componentWillUnmount() {
-    this.socket.close() //close the socket before we unmount
+    this.breakdownSocket() //breakdown the connection before unmounting
   }
 
   /**
@@ -158,6 +158,11 @@ class App extends React.Component<Props,State> {
     }
 
     return socket
+  }
+
+  breakdownSocket = () => {
+    this.socket.close() //disconnect
+    this.senderData = {} //clear all our old key data
   }
 
   /**
