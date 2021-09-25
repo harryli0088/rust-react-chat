@@ -407,7 +407,7 @@ class App extends React.Component<Props,State> {
               <input
                 id="new-room-input"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => this.setState({newRoom: e.target.value})}
-                placeholder="Enter a new room code"
+                placeholder="Pick a new room name"
                 value={this.state.newRoom}
               />&nbsp;
 
