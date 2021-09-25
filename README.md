@@ -1,10 +1,14 @@
-# React Rust Chat App
+# End-to-End Encrypted React - Rust Chat App
 
 Live Site (Note: Heroku free tier server takes several seconds to wake up from sleep mode): https://harryli0088.github.io/rust-react-chat/
 
 ![Screenshot](/client/public/screenshot.png)
 
-This is a chat application I built using React, TypeScript, and Rust. I deployed the client to Github pages and the server to Heroku.
+This is an end-to-end encrypted chat application I built using React, TypeScript, and Rust. I deployed the client to Github pages and the server to Heroku.
+
+## Encryption
+
+I use the Web Crypto API and the Diffie-Hellman key exchange algorithm to encrypt messages between clients. Check out the site for more details!
 
 ## Development
 ```
