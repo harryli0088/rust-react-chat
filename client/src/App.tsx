@@ -1,7 +1,7 @@
 import React from 'react'
 import { withRouter, RouteComponentProps } from "react-router"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDoorOpen, faKey, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
+import { faCode, faDoorOpen, faKey, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
 import { faGithub, faRust } from '@fortawesome/free-brands-svg-icons'
 
 import clientPackage from "../package.json"
@@ -392,7 +392,7 @@ class App extends React.Component<Props,State> {
             <h2>
               End-to-End Encrypted React - Rust Chat App &nbsp;
               <BlankAnchor href="https://github.com/harryli0088/rust-react-chat">
-                <FontAwesomeIcon className="interact" icon={faGithub} style={{color: "white"}}/>
+                <FontAwesomeIcon className="interact" icon={faGithub}/>
               </BlankAnchor>
             </h2>
             <p>Version {clientPackage.version}</p>
@@ -476,17 +476,19 @@ class App extends React.Component<Props,State> {
           <h3>Intro</h3>
           <p>This is an end-to-end encrypted chat app that uses the <BlankAnchor href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto">Subtle Web Crypto API</BlankAnchor> for encryption and sends messages to other clients via a Rust WebSocket server. I followed <BlankAnchor href="https://getstream.io/blog/web-crypto-api-chat/">this Stream tutorial</BlankAnchor> to implement the encryption logic.</p>
 
-          <h3>Ephemeral Key Generation</h3>
+          <h3>Ephemeral Key Generation <BlankAnchor href="https://github.com/harryli0088/rust-react-chat/blob/master/client/src/utils/crypto/genKeys.ts"><FontAwesomeIcon className="interact" icon={faCode}/></BlankAnchor></h3>
           <p>A client called Alice generates a public key and private key using the <BlankAnchor href="https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman">Elliptic Curve Diffie-Hellman (ECDH)</BlankAnchor> algorithm, which enables 2 people to share their public keys and generate a shared secret symmetric key for encryption. Alice creates these ephemeral keys when connecting to this website and deletes her keys once she disconnects.</p>
 
           <h3>Public Key Broadcasting</h3>
           <p>Once Alice opens this site, connects with the server, and generates a key-pair, she sends her public key to the WebSocket server. The server then broadcasts the public key to the other clients in the room. In turn, the other clients also send their public keys to Alice, so that every client has the public keys of all the other clients.</p>
 
-          <h3>Deriving a Shared Secret Symmetric Key</h3>
+          <h3>Deriving a Shared Secret Symmetric Key <BlankAnchor href="https://github.com/harryli0088/rust-react-chat/blob/master/client/src/utils/crypto/deriveKey.ts"><FontAwesomeIcon className="interact" icon={faCode}/></BlankAnchor></h3>
           <p>When Alice receives a public key from another client Bob, Alice combines his <i>public</i> key with her own <i>private</i> key to derive a new key. Bob combines Alice's public key with his private key to also derive a new key. Because of the Diffie-Hellman algorithm, Alice and Bob actually end up separately deriving the <i>same symmetric key</i> which they can use to encrypt their messages to each other. As long as Alice and Bob protect their own private keys, it is computationally infeasible for someone else to calculate their secret symmetric key.</p>
 
-          <h3>Encryption/Decryption</h3>
+          <h3>Encryption <BlankAnchor href="https://github.com/harryli0088/rust-react-chat/blob/master/client/src/utils/crypto/encrypt.ts"><FontAwesomeIcon className="interact" icon={faCode}/></BlankAnchor></h3>
           <p>Encryption is done using the Advanced Encryption Standard - Galois/Counter Mode (<BlankAnchor href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf">AES-GCM</BlankAnchor>) algorithm, which uses a randomly generated initialization vector to convert the plaintext message into an encrypted ciphertext. When Alice wants to send an encrypted message, she encrypts the plaintext message for every separate recipient. She sends a ciphertext, the initialization vector, and the recipient address to the server, which routes the targeted message to the intended recipient.</p>
+
+          <h3>Decryption <BlankAnchor href="https://github.com/harryli0088/rust-react-chat/blob/master/client/src/utils/crypto/decrypt.ts"><FontAwesomeIcon className="interact" icon={faCode}/></BlankAnchor></h3>
           <p>When Bob receives an encrypted message from Alice, he uses their derived symmetric key to decrypt the message.</p>
 
           <h3>Message Integrity</h3>
